@@ -1,0 +1,36 @@
+name: Alert software on Release
+
+on:
+  workflow_dispatch:
+  release:
+jobs:
+  alert_sw:
+    strategy:
+      matrix:
+          repo: ['RapidSilicon/RS_FPGA_PRIMITIVES']
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ github.sha }}
+        fetch-depth: '1'
+
+    - name: Get name of latest release
+      id: Release
+      uses: pozetroninc/github-action-get-latest-release@master
+      with:
+          repository: ${{ github.repository }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          excludes: draft
+
+    - name: print the release
+      run: |
+          echo ${{ steps.Release.outputs.release }}
+
+#    - name: Repository Dispatch to Raptor
+#      uses: peter-evans/repository-dispatch@v2.1.1
+   #   with:
+ #       token: ${{ secrets.NEW_RELEASE }}
+  #      repository: ${{ matrix.repo }}
+  #      event-type: digest_latest_Release
+  #      client-payload: '{"new_release": "${{ steps.Release.outputs.release }}"}'

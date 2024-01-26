@@ -1,0 +1,37 @@
+#!/bin/bash
+#
+# This script is used by the github checkin action
+#
+
+# internal models
+for f in models_internal/verilog/*.v
+do
+  echo "Testing $f with iverilog"
+  bin/test_compile_github $f
+  if [ "$?" -ne "0" ]; then
+    echo "Failed to compile $f"
+    exit 1
+  fi
+done
+
+# black box models
+for f in models_internal/verilog_blackbox/*.v
+do
+  echo "Testing $f with iverilog"
+  bin/test_compile_github $f
+  if [ "$?" -ne "0" ]; then
+    echo "Failed to compile $f"
+    exit 1
+  fi
+done
+
+# customer models
+for f in models_customer/verilog/*.v
+do
+  echo "Testing $f with iverilog"
+  bin/test_compile_github $f
+  if [ "$?" -ne "0" ]; then
+    echo "Failed to compile $f"
+    exit 1
+  fi
+done

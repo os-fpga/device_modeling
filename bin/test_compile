@@ -1,0 +1,10 @@
+#!/bin/bash
+
+#IVERILOG=/nfs_project/castor/gchen/rapidsilicon/raptor0623/bin/HDL_simulator/iverilog/bin/iverilog
+IVERILOG=/nfs_cadtools/softwares/raptor/instl_dir/latest/bin/HDL_simulator/iverilog/bin/iverilog
+
+echo "$IVERILOG -g2012 $1 -y models_internal/verilog"
+$IVERILOG -g2012 $1 -y models_internal/verilog
+
+echo "$IVERILOG -g2012 $1 -DRAPIDSILICON_INTERNAL -y models_internal/verilog"
+$IVERILOG -g2012 $1 -DRAPIDSILICON_INTERNAL -y models_internal/verilog 

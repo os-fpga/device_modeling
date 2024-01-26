@@ -1,0 +1,5 @@
+[FORMAT]
+max-line-length=160
+#max-locals=30
+#max-branches=30
+#max-statements=120

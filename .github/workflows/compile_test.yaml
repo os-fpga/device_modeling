@@ -1,0 +1,15 @@
+name: 'Device Modeling Repo CheckIn Action'
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  compile-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: run test_compile_all
+        run: |
+            sudo apt install -y iverilog
+            iverilog -V
+            cd $GITHUB_WORKSPACE && bin/test_compile_all
