@@ -13,8 +13,7 @@ module I_SERDES #(
   parameter DPA_MODE = "NONE" // Select Dynamic Phase Alignment or Clock Data Recovery (NONE/DPA/CDR)
 ) (
   input D, // Data input (connect to input port, buffer or I_DELAY)
-  input RST, // Active-low asycnhronous reset
-  input FIFO_RST, // FIFO reset
+  input RX_RST, // Active-low asycnhronous reset
   input BITSLIP_ADJ, // BITSLIP_ADJ input
   input EN, // EN input data (input data is low when driven low)
   input CLK_IN, // Fabric clock input
