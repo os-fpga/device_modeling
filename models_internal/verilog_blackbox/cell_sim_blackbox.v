@@ -254,26 +254,6 @@ module FIFO36K #(
 endmodule
 `endcelldefine
 //
-// I_BUF black box model
-// Input buffer
-//
-// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
-//
-`celldefine
-(* blackbox *)
-module I_BUF #(
-  parameter WEAK_KEEPER = "NONE" // Specify Pull-up/Pull-down on input (NONE/PULLUP/PULLDOWN)
-`ifdef RAPIDSILICON_INTERNAL
-  ,   parameter IOSTANDARD = "DEFAULT" // IO Standard
-`endif // RAPIDSILICON_INTERNAL
-  ) (
-  input logic I,
-  input logic EN,
-  output logic O
-);
-endmodule
-`endcelldefine
-//
 // I_BUF_DS black box model
 // input differential buffer
 //
@@ -292,6 +272,26 @@ module I_BUF_DS #(
   input logic I_N,
   input logic EN,
   output reg O
+);
+endmodule
+`endcelldefine
+//
+// I_BUF black box model
+// Input buffer
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module I_BUF #(
+  parameter WEAK_KEEPER = "NONE" // Specify Pull-up/Pull-down on input (NONE/PULLUP/PULLDOWN)
+`ifdef RAPIDSILICON_INTERNAL
+  ,   parameter IOSTANDARD = "DEFAULT" // IO Standard
+`endif // RAPIDSILICON_INTERNAL
+  ) (
+  input logic I,
+  input logic EN,
+  output logic O
 );
 endmodule
 `endcelldefine
@@ -347,8 +347,7 @@ module I_SERDES #(
   parameter DPA_MODE = "NONE" // Select Dynamic Phase Alignment or Clock Data Recovery (NONE/DPA/CDR)
   ) (
   input logic D,
-  input logic RST,
-  input logic FIFO_RST,
+  input logic RX_RST,
   input logic BITSLIP_ADJ,
   input logic EN,
   input logic CLK_IN,
@@ -459,46 +458,24 @@ module LUT6 #(
 endmodule
 `endcelldefine
 //
-// O_BUF black box model
-// Output buffer
+// O_BUF_DS black box model
+// Output differential buffer
 //
 // Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
 //
 `celldefine
 (* blackbox *)
-module O_BUF
+module O_BUF_DS
 `ifdef RAPIDSILICON_INTERNAL
   #(
   parameter IOSTANDARD = "DEFAULT", // IO Standard
-  parameter DRIVE_STRENGTH = 2, // Drive strength in mA for LVCMOS standards
-  parameter SLEW_RATE = "SLOW" // Transition rate for LVCMOS standards
+  parameter DIFFERENTIAL_TERMINATION = "TRUE" // Enable differential termination
   )
 `endif // RAPIDSILICON_INTERNAL
   (
   input logic I,
-  output logic O
-);
-endmodule
-`endcelldefine
-//
-// O_BUFT black box model
-// Output tri-state buffer
-//
-// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
-//
-`celldefine
-(* blackbox *)
-module O_BUFT #(
-  parameter WEAK_KEEPER = "NONE" // Enable pull-up/pull-down on output (NONE/PULLUP/PULLDOWN)
-`ifdef RAPIDSILICON_INTERNAL
-  ,   parameter IOSTANDARD = "DEFAULT", // IO Standard
-  parameter DRIVE_STRENGTH = 2, // Drive strength in mA for LVCMOS standards
-  parameter SLEW_RATE = "SLOW" // Transition rate for LVCMOS standards
-`endif // RAPIDSILICON_INTERNAL
-  ) (
-  input logic I,
-  input logic T,
-  output logic O
+  output logic O_P,
+  output logic O_N
 );
 endmodule
 `endcelldefine
@@ -525,24 +502,46 @@ module O_BUFT_DS #(
 endmodule
 `endcelldefine
 //
-// O_BUF_DS black box model
-// Output differential buffer
+// O_BUFT black box model
+// Output tri-state buffer
 //
 // Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
 //
 `celldefine
 (* blackbox *)
-module O_BUF_DS
+module O_BUFT #(
+  parameter WEAK_KEEPER = "NONE" // Enable pull-up/pull-down on output (NONE/PULLUP/PULLDOWN)
+`ifdef RAPIDSILICON_INTERNAL
+  ,   parameter IOSTANDARD = "DEFAULT", // IO Standard
+  parameter DRIVE_STRENGTH = 2, // Drive strength in mA for LVCMOS standards
+  parameter SLEW_RATE = "SLOW" // Transition rate for LVCMOS standards
+`endif // RAPIDSILICON_INTERNAL
+  ) (
+  input logic I,
+  input logic T,
+  output logic O
+);
+endmodule
+`endcelldefine
+//
+// O_BUF black box model
+// Output buffer
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module O_BUF
 `ifdef RAPIDSILICON_INTERNAL
   #(
   parameter IOSTANDARD = "DEFAULT", // IO Standard
-  parameter DIFFERENTIAL_TERMINATION = "TRUE" // Enable differential termination
+  parameter DRIVE_STRENGTH = 2, // Drive strength in mA for LVCMOS standards
+  parameter SLEW_RATE = "SLOW" // Transition rate for LVCMOS standards
   )
 `endif // RAPIDSILICON_INTERNAL
   (
   input logic I,
-  output logic O_P,
-  output logic O_N
+  output logic O
 );
 endmodule
 `endcelldefine
@@ -585,6 +584,25 @@ module O_DELAY #(
 endmodule
 `endcelldefine
 //
+// O_SERDES_CLK black box model
+// Output Serializer Clock
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module O_SERDES_CLK #(
+  parameter DATA_RATE = "SDR", // Single or double data rate (SDR/DDR)
+  parameter CLOCK_PHASE = 0 // Clock phase (0,90,180,270)
+  ) (
+  input logic CLK_EN,
+  output reg OUTPUT_CLK,
+  input logic PLL_LOCK,
+  input logic PLL_CLK
+);
+endmodule
+`endcelldefine
+//
 // O_SERDES black box model
 // Output Serializer
 //
@@ -605,25 +623,6 @@ module O_SERDES #(
   output logic Q,
   input logic CHANNEL_BOND_SYNC_IN,
   output logic CHANNEL_BOND_SYNC_OUT,
-  input logic PLL_LOCK,
-  input logic PLL_CLK
-);
-endmodule
-`endcelldefine
-//
-// O_SERDES_CLK black box model
-// Output Serializer Clock
-//
-// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
-//
-`celldefine
-(* blackbox *)
-module O_SERDES_CLK #(
-  parameter DATA_RATE = "SDR", // Single or double data rate (SDR/DDR)
-  parameter CLOCK_PHASE = 0 // Clock phase (0,90,180,270)
-  ) (
-  input logic CLK_EN,
-  output reg OUTPUT_CLK,
   input logic PLL_LOCK,
   input logic PLL_CLK
 );
