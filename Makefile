@@ -28,7 +28,7 @@ all: bb_models sim_models
 
 bb_models: $(BB_TARGETS)
 	@echo Generating single file
-	cat models_internal/verilog_blackbox/rundir/*.v > models_internal/verilog_blackbox/cell_sim_blackbox.v
+	ls models_internal/verilog_blackbox/rundir/*.v | xargs cat > models_internal/verilog_blackbox/cell_sim_blackbox.v
 	bin/test_compile models_internal/verilog_blackbox/cell_sim_blackbox.v
 
 # we need to make TDP_RAM36K.v first as it is used by the FIFO.
