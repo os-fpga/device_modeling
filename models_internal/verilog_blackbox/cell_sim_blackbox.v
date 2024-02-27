@@ -31,23 +31,6 @@ module CARRY (
 endmodule
 `endcelldefine
 //
-// CARRY_CHAIN black box model
-// FLE carry logic
-//
-// Copyright (c) 2023 Rapid Silicon, Inc.  All rights reserved.
-//
-`celldefine
-(* blackbox *)
-module CARRY_CHAIN (
-  input logic P,
-  input logic G,
-  input logic CIN,
-  output logic O,
-  output logic COUT
-);
-endmodule
-`endcelldefine
-//
 // CLK_BUF black box model
 // Global clock buffer
 //
