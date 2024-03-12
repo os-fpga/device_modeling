@@ -263,7 +263,7 @@ module TDP_RAM36K #(
     if (RAM_ADDR_WIDTH == A_WRITE_ADDR_WIDTH)
       find_a_write_index = 0;
     else    
-      find_a_write_index = ADDR_A[15-A_WRITE_ADDR_WIDTH:14-RAM_ADDR_WIDTH]; 
+      find_a_write_index = ADDR_A[14-RAM_ADDR_WIDTH:15-A_WRITE_ADDR_WIDTH];
 
   endfunction
 
@@ -273,7 +273,7 @@ module TDP_RAM36K #(
     if (RAM_ADDR_WIDTH == A_READ_ADDR_WIDTH)
       find_a_read_index = 0;
     else    
-      find_a_read_index = ADDR_A[15-A_READ_ADDR_WIDTH:14-RAM_ADDR_WIDTH]; 
+      find_a_read_index = ADDR_A[14-RAM_ADDR_WIDTH:15-A_READ_ADDR_WIDTH];
 
   endfunction
 
@@ -283,7 +283,7 @@ module TDP_RAM36K #(
     if (RAM_ADDR_WIDTH == B_WRITE_ADDR_WIDTH)
       find_b_write_index = 0;
     else    
-      find_b_write_index = ADDR_B[15-B_WRITE_ADDR_WIDTH:14-RAM_ADDR_WIDTH]; 
+      find_b_write_index = ADDR_B[14-RAM_ADDR_WIDTH:15-B_WRITE_ADDR_WIDTH];
 
   endfunction
 
@@ -293,7 +293,7 @@ module TDP_RAM36K #(
     if (RAM_ADDR_WIDTH == B_READ_ADDR_WIDTH)
       find_b_read_index = 0;
     else    
-      find_b_read_index = ADDR_B[15-B_READ_ADDR_WIDTH:14-RAM_ADDR_WIDTH]; 
+      find_b_read_index = ADDR_B[14-RAM_ADDR_WIDTH:15-B_READ_ADDR_WIDTH];
 
   endfunction
 
