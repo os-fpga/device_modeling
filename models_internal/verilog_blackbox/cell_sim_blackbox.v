@@ -170,13 +170,13 @@ endmodule
 `celldefine
 (* blackbox *)
 module FIFO18KX2 #(
-  parameter DATA_WRITE_WIDTH1 = 18, // FIFO data write width, FIFO 1 (1-18)
-  parameter DATA_READ_WIDTH1 = 18, // FIFO data read width, FIFO 1 (1-18)
+  parameter DATA_WRITE_WIDTH1 = 18, // FIFO data write width, FIFO 1 (9, 18)
+  parameter DATA_READ_WIDTH1 = 18, // FIFO data read width, FIFO 1 (9, 18)
   parameter FIFO_TYPE1 = "SYNCHRONOUS", // Synchronous or Asynchronous data transfer, FIFO 1 (SYNCHRONOUS/ASYNCHRONOUS)
   parameter [10:0] PROG_EMPTY_THRESH1 = 11'h004, // 11-bit Programmable empty depth, FIFO 1
   parameter [10:0] PROG_FULL_THRESH1 = 11'h7fa, // 11-bit Programmable full depth, FIFO 1
-  parameter DATA_WRITE_WIDTH2 = 18, // FIFO data write width, FIFO 2 (1-18)
-  parameter DATA_READ_WIDTH2 = 18, // FIFO data read width, FIFO 2 (1-18)
+  parameter DATA_WRITE_WIDTH2 = 18, // FIFO data write width, FIFO 2 (9, 18)
+  parameter DATA_READ_WIDTH2 = 18, // FIFO data read width, FIFO 2 (9, 18)
   parameter FIFO_TYPE2 = "SYNCHRONOUS", // Synchronous or Asynchronous data transfer, FIFO 2 (SYNCHRONOUS/ASYNCHRONOUS)
   parameter [10:0] PROG_EMPTY_THRESH2 = 11'h004, // 11-bit Programmable empty depth, FIFO 2
   parameter [10:0] PROG_FULL_THRESH2 = 11'h7fa // 11-bit Programmable full depth, FIFO 2
@@ -227,8 +227,8 @@ endmodule
 `celldefine
 (* blackbox *)
 module FIFO36K #(
-  parameter DATA_WRITE_WIDTH = 36, // FIFO data write width (1-36)
-  parameter DATA_READ_WIDTH = 36, // FIFO data read width (1-36)
+  parameter DATA_WRITE_WIDTH = 36, // FIFO data write width (9, 18, 36)
+  parameter DATA_READ_WIDTH = 36, // FIFO data read width (9, 18, 36)
   parameter FIFO_TYPE = "SYNCHRONOUS", // Synchronous or Asynchronous data transfer (SYNCHRONOUS/ASYNCHRONOUS)
   parameter [11:0] PROG_EMPTY_THRESH = 12'h004, // 12-bit Programmable empty depth
   parameter [11:0] PROG_FULL_THRESH = 12'hffa // 12-bit Programmable full depth
@@ -884,16 +884,16 @@ endmodule
 module TDP_RAM18KX2 #(
   parameter [16383:0] INIT1 = {16384{1'b0}}, // Initial Contents of data memory, RAM 1
   parameter [2047:0] INIT1_PARITY = {2048{1'b0}}, // Initial Contents of parity memory, RAM 1
-  parameter WRITE_WIDTH_A1 = 18, // Write data width on port A, RAM 1 (1-18)
-  parameter WRITE_WIDTH_B1 = 18, // Write data width on port B, RAM 1 (1-18)
-  parameter READ_WIDTH_A1 = 18, // Read data width on port A, RAM 1 (1-18)
-  parameter READ_WIDTH_B1 = 18, // Read data width on port B, RAM 1 (1-18)
+  parameter WRITE_WIDTH_A1 = 18, // Write data width on port A, RAM 1 (1, 2, 4, 9, 18)
+  parameter WRITE_WIDTH_B1 = 18, // Write data width on port B, RAM 1 (1, 2, 4, 9, 18)
+  parameter READ_WIDTH_A1 = 18, // Read data width on port A, RAM 1 (1, 2, 4, 9, 18)
+  parameter READ_WIDTH_B1 = 18, // Read data width on port B, RAM 1 (1, 2, 4, 9, 18)
   parameter [16383:0] INIT2 = {16384{1'b0}}, // Initial Contents of memory, RAM 2
   parameter [2047:0] INIT2_PARITY = {2048{1'b0}}, // Initial Contents of memory, RAM 2
-  parameter WRITE_WIDTH_A2 = 18, // Write data width on port A, RAM 2 (1-18)
-  parameter WRITE_WIDTH_B2 = 18, // Write data width on port B, RAM 2 (1-18)
-  parameter READ_WIDTH_A2 = 18, // Read data width on port A, RAM 2 (1-18)
-  parameter READ_WIDTH_B2 = 18 // Read data width on port B, RAM 2 (1-18)
+  parameter WRITE_WIDTH_A2 = 18, // Write data width on port A, RAM 2 (1, 2, 4, 9, 18)
+  parameter WRITE_WIDTH_B2 = 18, // Write data width on port B, RAM 2 (1, 2, 4, 9, 18)
+  parameter READ_WIDTH_A2 = 18, // Read data width on port A, RAM 2 (1, 2, 4, 9, 18)
+  parameter READ_WIDTH_B2 = 18 // Read data width on port B, RAM 2 (1, 2, 4, 9, 18)
   ) (
   input logic WEN_A1,
   input logic WEN_B1,
@@ -947,10 +947,10 @@ endmodule
 module TDP_RAM36K #(
   parameter [32767:0] INIT = {32768{1'b0}}, // Initial Contents of memory
   parameter [4095:0] INIT_PARITY = {4096{1'b0}}, // Initial Contents of memory
-  parameter WRITE_WIDTH_A = 36, // Write data width on port A (1-36)
-  parameter READ_WIDTH_A = WRITE_WIDTH_A, // Read data width on port A (1-36)
-  parameter WRITE_WIDTH_B = WRITE_WIDTH_A, // Write data width on port B (1-36)
-  parameter READ_WIDTH_B = READ_WIDTH_A // Read data width on port B (1-36)
+  parameter WRITE_WIDTH_A = 36, // Write data width on port A (1, 2, 4, 9, 18, 36)
+  parameter READ_WIDTH_A = WRITE_WIDTH_A, // Read data width on port A (1, 2, 4, 9, 18, 36)
+  parameter WRITE_WIDTH_B = WRITE_WIDTH_A, // Write data width on port B (1, 2, 4, 9, 18, 36)
+  parameter READ_WIDTH_B = READ_WIDTH_A // Read data width on port B (1, 2, 4, 9, 18, 36)
   ) (
   input logic WEN_A,
   input logic WEN_B,
