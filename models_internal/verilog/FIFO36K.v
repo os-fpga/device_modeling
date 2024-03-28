@@ -202,7 +202,7 @@ module FIFO36K #(
       18 ,
       36: begin end
       default: begin
-        $display("\nError: FIFO36K instance %m has parameter DATA_WRITE_WIDTH set to %s.  Valid values are 9, 18, 36\n", DATA_WRITE_WIDTH);
+        $display("\nError: FIFO36K instance %m has parameter DATA_WRITE_WIDTH set to %d.  Valid values are 9, 18, 36\n", DATA_WRITE_WIDTH);
         #1 $stop ;
       end
     endcase
@@ -211,7 +211,7 @@ module FIFO36K #(
       18 ,
       36: begin end
       default: begin
-        $display("\nError: FIFO36K instance %m has parameter DATA_READ_WIDTH set to %s.  Valid values are 9, 18, 36\n", DATA_READ_WIDTH);
+        $display("\nError: FIFO36K instance %m has parameter DATA_READ_WIDTH set to %d.  Valid values are 9, 18, 36\n", DATA_READ_WIDTH);
         #1 $stop ;
       end
     endcase

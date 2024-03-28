@@ -337,7 +337,7 @@ tdp_ram18kx2_inst
       9 ,
       18: begin end
       default: begin
-        $display("\nError: FIFO18KX2 instance %m has parameter DATA_WRITE_WIDTH1 set to %s.  Valid values are 9, 18\n", DATA_WRITE_WIDTH1);
+        $display("\nError: FIFO18KX2 instance %m has parameter DATA_WRITE_WIDTH1 set to %d.  Valid values are 9, 18\n", DATA_WRITE_WIDTH1);
         #1 $stop ;
       end
     endcase
@@ -345,7 +345,7 @@ tdp_ram18kx2_inst
       9 ,
       18: begin end
       default: begin
-        $display("\nError: FIFO18KX2 instance %m has parameter DATA_READ_WIDTH1 set to %s.  Valid values are 9, 18\n", DATA_READ_WIDTH1);
+        $display("\nError: FIFO18KX2 instance %m has parameter DATA_READ_WIDTH1 set to %d.  Valid values are 9, 18\n", DATA_READ_WIDTH1);
         #1 $stop ;
       end
     endcase
@@ -361,7 +361,7 @@ tdp_ram18kx2_inst
       9 ,
       18: begin end
       default: begin
-        $display("\nError: FIFO18KX2 instance %m has parameter DATA_WRITE_WIDTH2 set to %s.  Valid values are 9, 18\n", DATA_WRITE_WIDTH2);
+        $display("\nError: FIFO18KX2 instance %m has parameter DATA_WRITE_WIDTH2 set to %d.  Valid values are 9, 18\n", DATA_WRITE_WIDTH2);
         #1 $stop ;
       end
     endcase
@@ -369,7 +369,7 @@ tdp_ram18kx2_inst
       9 ,
       18: begin end
       default: begin
-        $display("\nError: FIFO18KX2 instance %m has parameter DATA_READ_WIDTH2 set to %s.  Valid values are 9, 18\n", DATA_READ_WIDTH2);
+        $display("\nError: FIFO18KX2 instance %m has parameter DATA_READ_WIDTH2 set to %d.  Valid values are 9, 18\n", DATA_READ_WIDTH2);
         #1 $stop ;
       end
     endcase
