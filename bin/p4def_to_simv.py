@@ -447,15 +447,17 @@ def main():
 
                 if 'type' in spec_dict["parameters"][param] and spec_dict["parameters"][param]['type'] == "integer":
                     value_list_for_case = ' ,\n      '.join(str_list(spec_dict["parameters"][param]["values"]))
+                    format_char = "%d"
                 else:
                     value_list_for_case = ' ,\n      '.join(quoted_list(spec_dict["parameters"][param]["values"]))
+                    format_char = "%s"
 
                 value_list_for_msg = ', '.join([str(element) for element in spec_dict["parameters"][param]["values"]])
 
                 stream.write(f"    case({param})\n")
                 stream.write(f"      {value_list_for_case}: begin end\n")
                 stream.write("      default: begin\n")
-                stream.write(f"        $display(\"\\nError: {name} instance %m has parameter {param} set to %s.  Valid values are {value_list_for_msg}\\n\", {param});\n")
+                stream.write(f"        $display(\"\\nError: {name} instance %m has parameter {param} set to {format_char}.  Valid values are {value_list_for_msg}\\n\", {param});\n")
                 stream.write("        #1 $stop ;\n")
                 stream.write("      end\n")
                 stream.write("    endcase\n")
