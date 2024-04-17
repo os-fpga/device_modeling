@@ -71,7 +71,9 @@
         if (REN_A) begin
           for (j_p = find_a_read_index(ADDR_A)*A_PARITY_READ_WIDTH; j_p < find_a_read_index(ADDR_A)*A_PARITY_READ_WIDTH+A_PARITY_READ_WIDTH; j_p = j_p + 1)
             RPARITY_A[j_p-(find_a_read_index(ADDR_A)*A_PARITY_READ_WIDTH)] <= RAM_PARITY[a_addr][j_p];
-        end      
+        end
+        else
+          RPARITY_A = 4'bx;  
 
       always @(posedge CLK_B)
         if (WEN_B) begin
@@ -90,7 +92,9 @@
         if (REN_B) begin
           for (m_p = find_b_read_index(ADDR_B)*B_PARITY_READ_WIDTH; m_p < find_b_read_index(ADDR_B)*B_PARITY_READ_WIDTH+B_PARITY_READ_WIDTH; m_p = m_p + 1)
             RPARITY_B[m_p-(find_b_read_index(ADDR_B)*B_PARITY_READ_WIDTH)] <= RAM_PARITY[b_addr][m_p];
-        end      
+        end
+        else
+          RPARITY_B = 4'bx;
 
     end
   endgenerate
@@ -131,6 +135,8 @@
       #collision_window;
       collision_a_read_flag = 0;
     end
+    else
+      RDATA_A = 32'bx;
 
   always @(posedge CLK_B)
     if (WEN_B) begin
@@ -157,6 +163,8 @@
       #collision_window;
       collision_b_read_flag = 0;
     end
+    else
+      RDATA_B = 32'bx;
 
 
 /*

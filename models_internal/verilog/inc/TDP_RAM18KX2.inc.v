@@ -73,7 +73,9 @@
         if (REN_A1) begin
           for (j_p = find_a1_read_index(ADDR_A1)*A1_PARITY_READ_WIDTH; j_p < find_a1_read_index(ADDR_A1)*A1_PARITY_READ_WIDTH+A1_PARITY_READ_WIDTH; j_p = j_p + 1)
             RPARITY_A1[j_p-(find_a1_read_index(ADDR_A1)*A1_PARITY_READ_WIDTH)] <= RAM1_PARITY[a1_addr][j_p];
-        end      
+        end
+        else
+          RPARITY_A1 = 2'bx;  
 
       always @(posedge CLK_B1)
         if (WEN_B1) begin
@@ -91,7 +93,9 @@
         if (REN_B1) begin
           for (m_p = find_b1_read_index(ADDR_B1)*B1_PARITY_READ_WIDTH; m_p < find_b1_read_index(ADDR_B1)*B1_PARITY_READ_WIDTH+B1_PARITY_READ_WIDTH; m_p = m_p + 1)
             RPARITY_B1[m_p-(find_b1_read_index(ADDR_B1)*B1_PARITY_READ_WIDTH)] <= RAM1_PARITY[b1_addr][m_p];
-        end      
+        end
+        else
+          RPARITY_B1 = 2'bx;      
 
     end
   endgenerate
@@ -133,6 +137,8 @@
       #collision_window;
       collision_a_read_flag = 0;
     end
+    else
+      RDATA_A1 = 16'bx;    
 
   always @(posedge CLK_B1)
     if (WEN_B1) begin
@@ -161,6 +167,8 @@
       #collision_window;
       collision_b_read_flag = 0;
     end
+    else
+      RDATA_B1 = 16'bx;
 
   // Collision checking
     always @(posedge collision_a_write_flag) begin
@@ -270,7 +278,9 @@
         if (REN_A2) begin
           for (j_p2 = find_a2_read_index(ADDR_A2)*A2_PARITY_READ_WIDTH; j_p2 < find_a2_read_index(ADDR_A2)*A2_PARITY_READ_WIDTH+A2_PARITY_READ_WIDTH; j_p2 = j_p2 + 1)
             RPARITY_A2[j_p2-(find_a2_read_index(ADDR_A2)*A2_PARITY_READ_WIDTH)] <= RAM2_PARITY[a2_addr][j_p2];
-        end      
+        end
+        else
+          RPARITY_A2 = 2'bx;   
 
       always @(posedge CLK_B2)
         if (WEN_B2) begin
@@ -288,7 +298,9 @@
         if (REN_B2) begin
           for (m_p2 = find_b2_read_index(ADDR_B2)*B2_PARITY_READ_WIDTH; m_p2 < find_b2_read_index(ADDR_B2)*B2_PARITY_READ_WIDTH+B2_PARITY_READ_WIDTH; m_p2 = m_p2 + 1)
             RPARITY_B2[m_p2-(find_b2_read_index(ADDR_B2)*B2_PARITY_READ_WIDTH)] <= RAM2_PARITY[b2_addr][m_p2];
-        end      
+        end
+        else
+          RPARITY_B2 = 2'bx;      
 
     end
   endgenerate
@@ -330,6 +342,8 @@
       #collision_window;
       collision_a2_read_flag = 0;
     end
+    else
+      RDATA_A2 = 16'bx;
 
   always @(posedge CLK_B2)
     if (WEN_B2) begin
@@ -358,6 +372,8 @@
       #collision_window;
       collision_b2_read_flag = 0;
     end
+    else
+      RDATA_B2 = 16'bx;
 
     // Collision checking
     always @(posedge collision_a2_write_flag) begin
