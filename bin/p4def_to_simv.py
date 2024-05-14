@@ -74,7 +74,19 @@ def gen_param_string(pdict):
 
         # Add suffix of description, if any.#
         # Include ',' if not last parameter
-        if 'desc' in pdict[param]:
+        if 'desc_above' in pdict[param]:
+            if 'desc_below' in pdict[param]:
+                print("")
+            else:
+                exit("****An error occured: Please specify desc_below along with desc_above****")
+
+            # has description
+            if paramcount != num_params:
+                param_str = f" {pdict[param]['desc_above']}\n{param_str}, // {pdict[param]['desc']}\n {pdict[param]['desc_below']}\n"
+            else:
+                # last element
+                param_str = f" {pdict[param]['desc_above']}\n{param_str} // {pdict[param]['desc']}\n {pdict[param]['desc_below']}\n"
+        elif 'desc' in pdict[param]:
             # has description
             if paramcount != num_params:
                 param_str = f"{param_str}, // {pdict[param]['desc']}\n"
