@@ -162,6 +162,20 @@ module DSP38 #(
 endmodule
 `endcelldefine
 //
+// FCLK_BUF black box model
+// Loopback clock buffer
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module FCLK_BUF (
+  input logic I,
+  output logic O
+);
+endmodule
+`endcelldefine
+//
 // FIFO18KX2 black box model
 // Dual 18Kb FIFO
 //
