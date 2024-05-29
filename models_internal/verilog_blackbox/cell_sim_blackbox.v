@@ -163,7 +163,7 @@ endmodule
 `endcelldefine
 //
 // FCLK_BUF black box model
-// Loopback clock buffer
+// Clock buffer for routing logic signal to the global clock
 //
 // Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
 //
