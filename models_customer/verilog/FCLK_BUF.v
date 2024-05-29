@@ -2,7 +2,7 @@
 `celldefine
 //
 // FCLK_BUF simulation model
-// Loopback clock buffer
+// Clock buffer for routing logic signal to the global clock
 //
 // Copyright (c) 2023 Rapid Silicon, Inc.  All rights reserved.
 //
