@@ -44,7 +44,7 @@
 #
 # primitive name should match the filename root.
 name: FCLK_BUF
-desc: Loopback clock buffer
+desc: Clock buffer for routing logic signal to the global clock
 category: periphery
 
 ports:
