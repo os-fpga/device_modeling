@@ -27,9 +27,9 @@ module FCLK_BUF_tb;
 	  end
 
     if(error===0)
-        $display("CLK BUFF TEST PASSED");
+        $display("Test Passed");
     else
-        $error("CLK BUFF TEST FAILED");
+        $error("Test Failed");
             
   end
   initial 
@@ -37,4 +37,5 @@ module FCLK_BUF_tb;
       $dumpfile("waves.vcd");
       $dumpvars;
   end
+  
 endmodule
