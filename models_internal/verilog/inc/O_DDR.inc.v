@@ -31,6 +31,7 @@
 
   
   always @(*)
+  begin
     if (!R)
       Q <= 1'b0;
     else if (E) 
@@ -38,3 +39,5 @@
         Q <= Q0;
       else
         Q <= Q1;
+  end
+  

@@ -47,6 +47,7 @@ module O_DDR (
 
   
   always @(*)
+  begin
     if (!R)
       Q <= 1'b0;
     else if (E) 
@@ -54,6 +55,7 @@ module O_DDR (
         Q <= Q0;
       else
         Q <= Q1;
-
+  end
+  
 endmodule
 `endcelldefine
