@@ -3,7 +3,11 @@
   reg data_neg;
 
   always @(negedge R)
+  begin
     Q <= 2'b00;
+    data_pos<=0;
+    data_neg<=0;
+  end
 
   always@(posedge C)
   begin
