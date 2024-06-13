@@ -21,8 +21,8 @@ module I_DDR (
   always @(negedge R)
   begin
     Q <= 2'b00;
-    data_pos<=0;
-    data_neg<=0;
+    data_pos<=2'b00;
+    data_neg<=2'b00;
   end
 
   always@(posedge C)
