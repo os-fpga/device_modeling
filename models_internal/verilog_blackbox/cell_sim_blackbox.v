@@ -642,7 +642,7 @@ module O_SERDES #(
   ) (
   input logic [WIDTH-1:0] D,
   input logic RST,
-  input logic LOAD_WORD,
+  input logic DATA_VALID,
   (* clkbuf_sink *)
   input logic CLK_IN,
   input logic OE_IN,
