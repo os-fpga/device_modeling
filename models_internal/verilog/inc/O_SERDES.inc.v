@@ -1,6 +1,5 @@
 
   
-
 	// GBOX CLK GEN
 	reg core_clk=0;
 	reg word_load_en;
@@ -113,7 +112,7 @@
 			fifo_read_en <= 1'b1;
 	end
 
-	assign word_load_en_sync = LOAD_WORD && fifo_read_en ;
+	assign word_load_en_sync = DATA_VALID && fifo_read_en && word_load_en ;
 
 
 	// Parallel data register 
