@@ -364,7 +364,7 @@ module I_SERDES #(
   parameter DPA_MODE = "NONE" // Select Dynamic Phase Alignment or Clock Data Recovery (NONE/DPA/CDR)
   ) (
   input logic D,
-  input logic RX_RST,
+  input logic RST,
   input logic BITSLIP_ADJ,
   input logic EN,
   (* clkbuf_sink *)
