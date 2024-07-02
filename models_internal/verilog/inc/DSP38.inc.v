@@ -1,4 +1,5 @@
 
+	 
 	// registers
 	reg subtract_reg = 1'b0;
 	reg [5:0] acc_fir_reg = 6'h00;
@@ -241,12 +242,18 @@
 	begin
 		if(RESET)
 		begin
-			DLY_B <= 18'h00000;
+			if(DSP_MODE== "MULTIPLY_ADD_SUB")
+				DLY_B <= 18'h00000;
+			
 			z_out_reg <= 38'h00000000;
 		end
 		else 
 		begin
-			DLY_B <= B;
+			if(DSP_MODE== "MULTIPLY_ADD_SUB")
+				DLY_B <= B;
+			else
+				DLY_B <= 18'dx;
+			
 			z_out_reg <= z_out;	
 		end
 	end
@@ -257,4 +264,18 @@
 	always @(ACC_FIR)
 		if (ACC_FIR > 43)
 			$display("WARNING: DSP38 instance %m ACC_FIR input is %d which is greater than 43 which serves no function", ACC_FIR);
+
+	always@(*) 
+	begin
+		case(DSP_MODE)
+			"MULTIPLY_ACCUMULATE": begin  
+				if(FEEDBACK>1)
+				begin
+					$display("\nError: DSP38 instance %m has parameter DSP_MODE set to %s and FEEDBACK set to %0d. Valid values of FEEDBACK for this mode are 0,1 \n", DSP_MODE,FEEDBACK);
+    			    $stop ;
+				end
+			end
+		endcase
+		
+	end
 
