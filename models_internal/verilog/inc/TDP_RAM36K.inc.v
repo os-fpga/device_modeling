@@ -103,9 +103,12 @@
           end
         end
         else
-          // verilator lint_off BLKANDNBLK
-          RPARITY_A <= 4'bx;
-          // verilator lint_on BLKANDNBLK
+          `ifndef FIFO
+            // verilator lint_off BLKANDNBLK
+            RPARITY_A <= 4'bx;
+            // verilator lint_on BLKANDNBLK
+          `endif
+
 
       always @(posedge CLK_B)
         if (WEN_B) begin
@@ -145,9 +148,11 @@
           end
         end
         else
-          // verilator lint_off BLKANDNBLK
-          RPARITY_B <= 4'bx;
-          // verilator lint_on BLKANDNBLK
+          `ifndef FIFO
+            // verilator lint_off BLKANDNBLK
+            RPARITY_B <= 4'bx;
+            // verilator lint_on BLKANDNBLK
+          `endif
     end
   endgenerate
 
@@ -211,9 +216,11 @@
       collision_a_read_flag = 0;
     end
     else
-      // verilator lint_off BLKANDNBLK
-      RDATA_A <= 32'bx;
-      // verilator lint_on BLKANDNBLK
+      `ifndef FIFO
+        // verilator lint_off BLKANDNBLK
+        RDATA_A <= 32'bx;
+        // verilator lint_on BLKANDNBLK
+      `endif
 
   always @(posedge CLK_B)
     if (WEN_B) begin
@@ -260,9 +267,11 @@
       collision_b_read_flag = 0;
     end
     else
-      // verilator lint_off BLKANDNBLK
-      RDATA_B <= 32'bx;
-      // verilator lint_on BLKANDNBLK
+      `ifndef FIFO
+        // verilator lint_off BLKANDNBLK
+        RDATA_B <= 32'bx;
+        // verilator lint_on BLKANDNBLK
+      `endif
 
 
 /*

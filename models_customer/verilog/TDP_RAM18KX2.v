@@ -169,9 +169,11 @@ module TDP_RAM18KX2 #(
           end
         end
         else
-          // verilator lint_off BLKANDNBLK
-          RPARITY_A1 <= 2'bx;
-          // verilator lint_on BLKANDNBLK
+          `ifndef FIFO
+            // verilator lint_off BLKANDNBLK
+            RPARITY_A1 <= 2'bx;
+            // verilator lint_on BLKANDNBLK
+          `endif
 
       always @(posedge CLK_B1)
         if (WEN_B1) begin
@@ -210,9 +212,11 @@ module TDP_RAM18KX2 #(
           end
         end
         else
-          // verilator lint_off BLKANDNBLK
-          RPARITY_B1 <= 2'bx;
-          // verilator lint_on BLKANDNBLK
+          `ifndef FIFO
+            // verilator lint_off BLKANDNBLK
+            RPARITY_B1 <= 2'bx;
+            // verilator lint_on BLKANDNBLK
+          `endif
     end
   endgenerate
 
@@ -277,9 +281,11 @@ module TDP_RAM18KX2 #(
       collision_a_read_flag = 0;
     end
     else
-      // verilator lint_off BLKANDNBLK
-      RDATA_A1 <= 16'bx;
-      // verilator lint_on BLKANDNBLK
+      `ifndef FIFO
+        // verilator lint_off BLKANDNBLK
+        RDATA_A1 <= 16'bx;
+        // verilator lint_on BLKANDNBLK
+      `endif
 
   always @(posedge CLK_B1)
     if (WEN_B1) begin
@@ -328,9 +334,11 @@ module TDP_RAM18KX2 #(
       collision_b_read_flag = 0;
     end
     else
-      // verilator lint_off BLKANDNBLK
-      RDATA_B1 <= 16'bx;
-      // verilator lint_on BLKANDNBLK
+      `ifndef FIFO
+        // verilator lint_off BLKANDNBLK
+        RDATA_B1 <= 16'bx;
+        // verilator lint_on BLKANDNBLK
+      `endif
 
   // Collision checking
     always @(posedge collision_a_write_flag) begin
@@ -472,9 +480,11 @@ module TDP_RAM18KX2 #(
           end
         end
         else
-          // verilator lint_off BLKANDNBLK
-          RPARITY_A2 <= 2'bx;
-          // verilator lint_on BLKANDNBLK
+          `ifndef FIFO
+            // verilator lint_off BLKANDNBLK
+            RPARITY_A2 <= 2'bx;
+            // verilator lint_on BLKANDNBLK
+          `endif
 
       always @(posedge CLK_B2)
         if (WEN_B2) begin
@@ -513,9 +523,11 @@ module TDP_RAM18KX2 #(
           end
         end
         else
-          // verilator lint_off BLKANDNBLK
-          RPARITY_B2 <= 2'bx;
-          // verilator lint_on BLKANDNBLK
+          `ifndef FIFO
+            // verilator lint_off BLKANDNBLK
+            RPARITY_B2 <= 2'bx;
+            // verilator lint_on BLKANDNBLK
+          `endif
     end
   endgenerate
 
@@ -580,9 +592,11 @@ module TDP_RAM18KX2 #(
       collision_a2_read_flag = 0;
     end
     else
-      // verilator lint_off BLKANDNBLK
-      RDATA_A2 <= 16'bx;
-      // verilator lint_on BLKANDNBLK
+      `ifndef FIFO
+        // verilator lint_off BLKANDNBLK
+        RDATA_A2 <= 16'bx;
+        // verilator lint_on BLKANDNBLK
+      `endif
 
   always @(posedge CLK_B2)
     if (WEN_B2) begin
@@ -631,9 +645,11 @@ module TDP_RAM18KX2 #(
       collision_b2_read_flag = 0;
     end
     else
-      // verilator lint_off BLKANDNBLK
-      RDATA_B2 <= 16'bx;
-      // verilator lint_on BLKANDNBLK
+      `ifndef FIFO
+        // verilator lint_off BLKANDNBLK
+        RDATA_B2 <= 16'bx;
+        // verilator lint_on BLKANDNBLK
+      `endif
 
     // Collision checking
     always @(posedge collision_a2_write_flag) begin
