@@ -351,6 +351,20 @@ module I_DELAY #(
 endmodule
 `endcelldefine
 //
+// I_FAB black box model
+// Marker Buffer for periphery to fabric transition
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module I_FAB (
+  input logic I,
+  output logic O
+);
+endmodule
+`endcelldefine
+//
 // I_SERDES black box model
 // Input Serial Deserializer
 //
@@ -611,7 +625,7 @@ endmodule
 `endcelldefine
 //
 // O_FAB black box model
-// Marker Buffer for fabric to pheriphery transition
+// Marker Buffer for fabric to periphery transition
 //
 // Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
 //
