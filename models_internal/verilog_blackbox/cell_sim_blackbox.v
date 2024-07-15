@@ -946,7 +946,9 @@ module TDP_RAM18KX2 #(
   input logic WEN_B2,
   input logic REN_A2,
   input logic REN_B2,
+  (* clkbuf_sink *)
   input logic CLK_A2,
+  (* clkbuf_sink *)
   input logic CLK_B2,
   input logic [1:0] BE_A2,
   input logic [1:0] BE_B2,
