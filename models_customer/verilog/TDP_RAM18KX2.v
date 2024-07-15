@@ -844,8 +844,7 @@ module TDP_RAM18KX2 #(
       9 ,
       18: begin end
       default: begin
-        $display("\nError: TDP_RAM18KX2 instance %m has parameter WRITE_WIDTH_A1 set to %d.  Valid values are 1, 2, 4, 9, 18\n", WRITE_WIDTH_A1);
-        #1 $stop ;
+        $fatal(1,"\nError: TDP_RAM18KX2 instance %m has parameter WRITE_WIDTH_A1 set to %d.  Valid values are 1, 2, 4, 9, 18\n", WRITE_WIDTH_A1);
       end
     endcase
     case(WRITE_WIDTH_B1)
@@ -855,8 +854,7 @@ module TDP_RAM18KX2 #(
       9 ,
       18: begin end
       default: begin
-        $display("\nError: TDP_RAM18KX2 instance %m has parameter WRITE_WIDTH_B1 set to %d.  Valid values are 1, 2, 4, 9, 18\n", WRITE_WIDTH_B1);
-        #1 $stop ;
+        $fatal(1,"\nError: TDP_RAM18KX2 instance %m has parameter WRITE_WIDTH_B1 set to %d.  Valid values are 1, 2, 4, 9, 18\n", WRITE_WIDTH_B1);
       end
     endcase
     case(READ_WIDTH_A1)
@@ -866,8 +864,7 @@ module TDP_RAM18KX2 #(
       9 ,
       18: begin end
       default: begin
-        $display("\nError: TDP_RAM18KX2 instance %m has parameter READ_WIDTH_A1 set to %d.  Valid values are 1, 2, 4, 9, 18\n", READ_WIDTH_A1);
-        #1 $stop ;
+        $fatal(1,"\nError: TDP_RAM18KX2 instance %m has parameter READ_WIDTH_A1 set to %d.  Valid values are 1, 2, 4, 9, 18\n", READ_WIDTH_A1);
       end
     endcase
     case(READ_WIDTH_B1)
@@ -877,8 +874,7 @@ module TDP_RAM18KX2 #(
       9 ,
       18: begin end
       default: begin
-        $display("\nError: TDP_RAM18KX2 instance %m has parameter READ_WIDTH_B1 set to %d.  Valid values are 1, 2, 4, 9, 18\n", READ_WIDTH_B1);
-        #1 $stop ;
+        $fatal(1,"\nError: TDP_RAM18KX2 instance %m has parameter READ_WIDTH_B1 set to %d.  Valid values are 1, 2, 4, 9, 18\n", READ_WIDTH_B1);
       end
     endcase
     case(WRITE_WIDTH_A2)
@@ -888,8 +884,7 @@ module TDP_RAM18KX2 #(
       9 ,
       18: begin end
       default: begin
-        $display("\nError: TDP_RAM18KX2 instance %m has parameter WRITE_WIDTH_A2 set to %d.  Valid values are 1, 2, 4, 9, 18\n", WRITE_WIDTH_A2);
-        #1 $stop ;
+        $fatal(1,"\nError: TDP_RAM18KX2 instance %m has parameter WRITE_WIDTH_A2 set to %d.  Valid values are 1, 2, 4, 9, 18\n", WRITE_WIDTH_A2);
       end
     endcase
     case(WRITE_WIDTH_B2)
@@ -899,8 +894,7 @@ module TDP_RAM18KX2 #(
       9 ,
       18: begin end
       default: begin
-        $display("\nError: TDP_RAM18KX2 instance %m has parameter WRITE_WIDTH_B2 set to %d.  Valid values are 1, 2, 4, 9, 18\n", WRITE_WIDTH_B2);
-        #1 $stop ;
+        $fatal(1,"\nError: TDP_RAM18KX2 instance %m has parameter WRITE_WIDTH_B2 set to %d.  Valid values are 1, 2, 4, 9, 18\n", WRITE_WIDTH_B2);
       end
     endcase
     case(READ_WIDTH_A2)
@@ -910,8 +904,7 @@ module TDP_RAM18KX2 #(
       9 ,
       18: begin end
       default: begin
-        $display("\nError: TDP_RAM18KX2 instance %m has parameter READ_WIDTH_A2 set to %d.  Valid values are 1, 2, 4, 9, 18\n", READ_WIDTH_A2);
-        #1 $stop ;
+        $fatal(1,"\nError: TDP_RAM18KX2 instance %m has parameter READ_WIDTH_A2 set to %d.  Valid values are 1, 2, 4, 9, 18\n", READ_WIDTH_A2);
       end
     endcase
     case(READ_WIDTH_B2)
@@ -921,8 +914,7 @@ module TDP_RAM18KX2 #(
       9 ,
       18: begin end
       default: begin
-        $display("\nError: TDP_RAM18KX2 instance %m has parameter READ_WIDTH_B2 set to %d.  Valid values are 1, 2, 4, 9, 18\n", READ_WIDTH_B2);
-        #1 $stop ;
+        $fatal(1,"\nError: TDP_RAM18KX2 instance %m has parameter READ_WIDTH_B2 set to %d.  Valid values are 1, 2, 4, 9, 18\n", READ_WIDTH_B2);
       end
     endcase
 

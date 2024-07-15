@@ -351,6 +351,20 @@ module I_DELAY #(
 endmodule
 `endcelldefine
 //
+// I_FAB black box model
+// Marker Buffer for periphery to fabric transition
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module I_FAB (
+  input logic I,
+  output logic O
+);
+endmodule
+`endcelldefine
+//
 // I_SERDES black box model
 // Input Serial Deserializer
 //
@@ -605,6 +619,20 @@ module O_DELAY #(
   output logic [5:0] DLY_TAP_VALUE,
   (* clkbuf_sink *)
   input logic CLK_IN,
+  output logic O
+);
+endmodule
+`endcelldefine
+//
+// O_FAB black box model
+// Marker Buffer for fabric to periphery transition
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module O_FAB (
+  input logic I,
   output logic O
 );
 endmodule
@@ -946,7 +974,9 @@ module TDP_RAM18KX2 #(
   input logic WEN_B2,
   input logic REN_A2,
   input logic REN_B2,
+  (* clkbuf_sink *)
   input logic CLK_A2,
+  (* clkbuf_sink *)
   input logic CLK_B2,
   input logic [1:0] BE_A2,
   input logic [1:0] BE_B2,
