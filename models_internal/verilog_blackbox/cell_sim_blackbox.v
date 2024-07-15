@@ -610,6 +610,20 @@ module O_DELAY #(
 endmodule
 `endcelldefine
 //
+// O_FAB black box model
+// Marker Buffer for fabric to pheriphery transition
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module O_FAB (
+  input logic I,
+  output logic O
+);
+endmodule
+`endcelldefine
+//
 // O_SERDES_CLK black box model
 // Output Serializer Clock
 //
