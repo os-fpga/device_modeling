@@ -409,24 +409,21 @@ module DSP19X2 #(
       "MULTIPLY_ADD_SUB" ,
       "MULTIPLY_ACCUMULATE": begin end
       default: begin
-        $display("\nError: DSP19X2 instance %m has parameter DSP_MODE set to %s.  Valid values are MULTIPLY, MULTIPLY_ADD_SUB, MULTIPLY_ACCUMULATE\n", DSP_MODE);
-        #1 $stop ;
+        $fatal(1,"\nError: DSP19X2 instance %m has parameter DSP_MODE set to %s.  Valid values are MULTIPLY, MULTIPLY_ADD_SUB, MULTIPLY_ACCUMULATE\n", DSP_MODE);
       end
     endcase
     case(OUTPUT_REG_EN)
       "TRUE" ,
       "FALSE": begin end
       default: begin
-        $display("\nError: DSP19X2 instance %m has parameter OUTPUT_REG_EN set to %s.  Valid values are TRUE, FALSE\n", OUTPUT_REG_EN);
-        #1 $stop ;
+        $fatal(1,"\nError: DSP19X2 instance %m has parameter OUTPUT_REG_EN set to %s.  Valid values are TRUE, FALSE\n", OUTPUT_REG_EN);
       end
     endcase
     case(INPUT_REG_EN)
       "TRUE" ,
       "FALSE": begin end
       default: begin
-        $display("\nError: DSP19X2 instance %m has parameter INPUT_REG_EN set to %s.  Valid values are TRUE, FALSE\n", INPUT_REG_EN);
-        #1 $stop ;
+        $fatal(1,"\nError: DSP19X2 instance %m has parameter INPUT_REG_EN set to %s.  Valid values are TRUE, FALSE\n", INPUT_REG_EN);
       end
     endcase
 
