@@ -7,7 +7,7 @@
 `celldefine
 (* blackbox *)
 module BOOT_CLOCK #(
-  parameter PERIOD = 25.0 // Clock period for simulation purposes (nS)
+  parameter PERIOD = 25 // Clock period for simulation purposes (nS)
   ) (
   output reg O
 );
