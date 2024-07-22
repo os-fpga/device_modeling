@@ -48,6 +48,9 @@ def gen_param_string(pdict):
 
         if 'default' in pdict[param]:
             default = pdict[param]['default']
+            if 'type' in pdict[param]:
+                if pdict[param]['type'] == "real": # convert the real values to int for blackbox as float/real are not synthesizable
+                    default = int(default)
             if is_real_param(pdict[param]) or is_vector_param(pdict[param]):
                 # integers and vectors don't need quotes
                 param_str = f"  parameter {vector_str}{param} = {default}"
