@@ -1,5 +1,6 @@
 `timescale 1ns/1ps
 `celldefine
+`include "TDP_RAM36K.v"
 //
 // FIFO36K simulation model
 // 36Kb FIFO

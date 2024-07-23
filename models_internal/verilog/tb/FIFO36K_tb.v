@@ -55,7 +55,7 @@ end
 	end
 
 	 FIFO36K #(
-		.DATA_WIDTH(DATA_WIDTH),
+		.DATA_WRITE_WIDTH(DATA_WIDTH),
 		.FIFO_TYPE(FIFO_TYPE),
 		.PROG_EMPTY_THRESH(PROG_EMPTY_THRESH), // 12-bit Programmable empty depth
 		.PROG_FULL_THRESH(PROG_FULL_THRESH) // 12-bit Programmable full depth
@@ -93,7 +93,7 @@ end
 	end
 
 	initial begin
-		$dumpfile("out/wave.vcd");
+		$dumpfile("wave.vcd");
 		$dumpvars;
 	end
 
