@@ -130,9 +130,9 @@ def generate_port_str(port):
 % if has_parameters and has_properties:
 module ${dd['name']} #(
 ${param_str}
-`ifdef RAPIDSILICON_INTERNAL
-  , ${prop_str}
-`endif // RAPIDSILICON_INTERNAL
+##`ifdef RAPIDSILICON_INTERNAL
+,${prop_str}
+##`endif // RAPIDSILICON_INTERNAL
   ) (
 % endif
 ## ONLY PARAMETERS
@@ -144,11 +144,11 @@ ${param_str}
 ## ONLY PROPERTIES
 % if not has_parameters and has_properties:
 module ${dd['name']}
-`ifdef RAPIDSILICON_INTERNAL
+##`ifdef RAPIDSILICON_INTERNAL
   #(
 ${prop_str}
   )
-`endif // RAPIDSILICON_INTERNAL
+##`endif // RAPIDSILICON_INTERNAL
   (
 % endif
 ## NEITHER PARAMETERS NOR PROPERTIES
