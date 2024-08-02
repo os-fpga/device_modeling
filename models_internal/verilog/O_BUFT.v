@@ -9,11 +9,9 @@
 
 module O_BUFT #(
       parameter WEAK_KEEPER = "NONE" // Enable pull-up/pull-down on output (NONE/PULLUP/PULLDOWN)
-`ifdef RAPIDSILICON_INTERNAL
-    ,  parameter IOSTANDARD = "DEFAULT", // IO Standard
+,  parameter IOSTANDARD = "DEFAULT", // IO Standard
   parameter DRIVE_STRENGTH = 2, // Drive strength in mA for LVCMOS standards
   parameter SLEW_RATE = "SLOW" // Transition rate for LVCMOS standards
-`endif // RAPIDSILICON_INTERNAL
 ) (
   input I, // Data input
   input T, // Tri-state output
@@ -39,8 +37,6 @@ module O_BUFT #(
         $fatal(1,"\nError: O_BUFT instance %m has parameter WEAK_KEEPER set to %s.  Valid values are NONE, PULLUP, PULLDOWN\n", WEAK_KEEPER);
       end
     endcase
-
-`ifdef RAPIDSILICON_INTERNAL
 
     case(IOSTANDARD)
       "DEFAULT" ,
@@ -93,7 +89,6 @@ module O_BUFT #(
         $fatal(1,"\nError: O_BUFT instance %m has parameter SLEW_RATE set to %s.  Valid values are SLOW, FAST\n", SLEW_RATE);
       end
     endcase
-`endif // RAPIDSILICON_INTERNAL
 
   end
 

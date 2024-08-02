@@ -18,4 +18,9 @@
     endcase
   end
 
+  specify
+    if (EN == 1'b1)
+    ( I_P, I_N *> O ) = (0, 0);
+  endspecify
 
+  

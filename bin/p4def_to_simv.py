@@ -316,9 +316,10 @@ def main():
         if has_parameters and has_properties:
             outstr += f"module {name} #(\n    "
             outstr += param_str
-            outstr += "`ifdef RAPIDSILICON_INTERNAL\n    ,"
+            #outstr += "`ifdef RAPIDSILICON_INTERNAL\n    ,"
+            outstr += ","
             outstr += prop_str
-            outstr += "`endif // RAPIDSILICON_INTERNAL\n"
+            #outstr += "`endif // RAPIDSILICON_INTERNAL\n"
             outstr += ") (\n"
             stream.write(outstr)
 
@@ -330,11 +331,11 @@ def main():
 
         if not has_parameters and has_properties:
             outstr += f"module {name}\n"
-            outstr += "`ifdef RAPIDSILICON_INTERNAL\n    "
+            #outstr += "`ifdef RAPIDSILICON_INTERNAL\n    "
             outstr += "#(\n"
             outstr += prop_str
             outstr += ")\n"
-            outstr += "`endif // RAPIDSILICON_INTERNAL\n"
+            #outstr += "`endif // RAPIDSILICON_INTERNAL\n"
             outstr += "(\n"
             stream.write(outstr)
 
@@ -475,7 +476,7 @@ def main():
 
         # property checking
         if 'properties' in spec_dict:
-            stream.write('\n`ifdef RAPIDSILICON_INTERNAL\n')
+            #stream.write('\n`ifdef RAPIDSILICON_INTERNAL\n')
             for param in spec_dict["properties"]:
 
                 # determine if property is numeric or not
@@ -514,7 +515,7 @@ def main():
                 stream.write("      end\n")
                 stream.write("    endcase\n")
 
-            stream.write('`endif // RAPIDSILICON_INTERNAL\n')
+            #stream.write('`endif // RAPIDSILICON_INTERNAL\n')
 
         if needs_checking(spec_dict):
             stream.write("\n  end\n")

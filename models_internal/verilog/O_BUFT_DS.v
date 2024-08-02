@@ -9,10 +9,8 @@
 
 module O_BUFT_DS #(
       parameter WEAK_KEEPER = "NONE" // Enable pull-up/pull-down on output (NONE/PULLUP/PULLDOWN)
-`ifdef RAPIDSILICON_INTERNAL
-    ,  parameter IOSTANDARD = "DEFAULT", // IO Standard
+,  parameter IOSTANDARD = "DEFAULT", // IO Standard
   parameter DIFFERENTIAL_TERMINATION = "TRUE" // Enable differential termination
-`endif // RAPIDSILICON_INTERNAL
 ) (
   input I, // Data input
   input T, // Tri-state output
@@ -43,8 +41,6 @@ module O_BUFT_DS #(
       end
     endcase
 
-`ifdef RAPIDSILICON_INTERNAL
-
     case(IOSTANDARD)
       "DEFAULT" ,
       "BLVDS_DIFF" ,
@@ -74,7 +70,6 @@ module O_BUFT_DS #(
         $fatal(1,"\nError: O_BUFT_DS instance %m has parameter DIFFERENTIAL_TERMINATION set to %s.  Valid values are TRUE, FALSE\n", DIFFERENTIAL_TERMINATION);
       end
     endcase
-`endif // RAPIDSILICON_INTERNAL
 
   end
 
