@@ -19,7 +19,10 @@ module O_BUF
 );
 
    assign O = I ;
- initial begin
+
+   specify
+    (I => O) = (0, 0);
+   endspecify initial begin
 
     case(IOSTANDARD)
       "DEFAULT" ,
