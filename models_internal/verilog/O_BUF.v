@@ -8,22 +8,21 @@
 //
 
 module O_BUF
-`ifdef RAPIDSILICON_INTERNAL
-    #(
+#(
   parameter IOSTANDARD = "DEFAULT", // IO Standard
   parameter DRIVE_STRENGTH = 2, // Drive strength in mA for LVCMOS standards
   parameter SLEW_RATE = "SLOW" // Transition rate for LVCMOS standards
 )
-`endif // RAPIDSILICON_INTERNAL
 (
   input I, // Data input
   output O // Data output (connect to top-level port)
 );
 
    assign O = I ;
- initial begin
 
-`ifdef RAPIDSILICON_INTERNAL
+   specify
+    (I => O) = (0, 0);
+   endspecify initial begin
 
     case(IOSTANDARD)
       "DEFAULT" ,
@@ -76,7 +75,6 @@ module O_BUF
         $fatal(1,"\nError: O_BUF instance %m has parameter SLEW_RATE set to %s.  Valid values are SLOW, FAST\n", SLEW_RATE);
       end
     endcase
-`endif // RAPIDSILICON_INTERNAL
 
   end
 

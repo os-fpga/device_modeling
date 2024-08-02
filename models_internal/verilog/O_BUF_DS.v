@@ -8,12 +8,10 @@
 //
 
 module O_BUF_DS
-`ifdef RAPIDSILICON_INTERNAL
-    #(
+#(
   parameter IOSTANDARD = "DEFAULT", // IO Standard
   parameter DIFFERENTIAL_TERMINATION = "TRUE" // Enable differential termination
 )
-`endif // RAPIDSILICON_INTERNAL
 (
   input I, // Data input
   output O_P, // Data positive output (connect to top-level port)
@@ -23,9 +21,12 @@ module O_BUF_DS
     assign O_P = I;
     assign O_N = ~I;
     
- initial begin
+    specify
+        (I => O_P) = (0, 0);
+        (I => O_N) = (0, 0);
+    endspecify
 
-`ifdef RAPIDSILICON_INTERNAL
+     initial begin
 
     case(IOSTANDARD)
       "DEFAULT" ,
@@ -56,7 +57,6 @@ module O_BUF_DS
         $fatal(1,"\nError: O_BUF_DS instance %m has parameter DIFFERENTIAL_TERMINATION set to %s.  Valid values are TRUE, FALSE\n", DIFFERENTIAL_TERMINATION);
       end
     endcase
-`endif // RAPIDSILICON_INTERNAL
 
   end
 
