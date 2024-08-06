@@ -37,15 +37,18 @@ module I_BUF_DS #(
     endcase
   end
 
+  specify
+    if (EN == 1'b1)
+    ( I_P, I_N *> O ) = (0, 0);
+  endspecify
 
- initial begin
+   initial begin
     case(WEAK_KEEPER)
       "NONE" ,
       "PULLUP" ,
       "PULLDOWN": begin end
       default: begin
-        $display("\nError: I_BUF_DS instance %m has parameter WEAK_KEEPER set to %s.  Valid values are NONE, PULLUP, PULLDOWN\n", WEAK_KEEPER);
-        #1 $stop ;
+        $fatal(1,"\nError: I_BUF_DS instance %m has parameter WEAK_KEEPER set to %s.  Valid values are NONE, PULLUP, PULLDOWN\n", WEAK_KEEPER);
       end
     endcase
     case(IOSTANDARD)
@@ -66,16 +69,14 @@ module I_BUF_DS #(
       "SSTL_18_HP_DIFF" ,
       "SSTL_18_HR_DIFF": begin end
       default: begin
-        $display("\nError: I_BUF_DS instance %m has parameter IOSTANDARD set to %s.  Valid values are DEFAULT, BLVDS_DIFF, LVDS_HP_DIFF, LVDS_HR_DIFF, LVPECL_25_DIFF, LVPECL_33_DIFF, HSTL_12_DIFF, HSTL_15_DIFF, HSUL_12_DIFF, MIPI_DIFF, POD_12_DIFF, RSDS_DIFF, SLVS_DIFF, SSTL_15_DIFF, SSTL_18_HP_DIFF, SSTL_18_HR_DIFF\n", IOSTANDARD);
-        #1 $stop ;
+        $fatal(1,"\nError: I_BUF_DS instance %m has parameter IOSTANDARD set to %s.  Valid values are DEFAULT, BLVDS_DIFF, LVDS_HP_DIFF, LVDS_HR_DIFF, LVPECL_25_DIFF, LVPECL_33_DIFF, HSTL_12_DIFF, HSTL_15_DIFF, HSUL_12_DIFF, MIPI_DIFF, POD_12_DIFF, RSDS_DIFF, SLVS_DIFF, SSTL_15_DIFF, SSTL_18_HP_DIFF, SSTL_18_HR_DIFF\n", IOSTANDARD);
       end
     endcase
     case(DIFFERENTIAL_TERMINATION)
       "TRUE" ,
       "FALSE": begin end
       default: begin
-        $display("\nError: I_BUF_DS instance %m has parameter DIFFERENTIAL_TERMINATION set to %s.  Valid values are TRUE, FALSE\n", DIFFERENTIAL_TERMINATION);
-        #1 $stop ;
+        $fatal(1,"\nError: I_BUF_DS instance %m has parameter DIFFERENTIAL_TERMINATION set to %s.  Valid values are TRUE, FALSE\n", DIFFERENTIAL_TERMINATION);
       end
     endcase
 

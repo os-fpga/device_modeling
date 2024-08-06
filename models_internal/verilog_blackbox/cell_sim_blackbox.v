@@ -7,7 +7,7 @@
 `celldefine
 (* blackbox *)
 module BOOT_CLOCK #(
-  parameter PERIOD = 25.0 // Clock period for simulation purposes (nS)
+  parameter PERIOD = 25 // Clock period for simulation purposes (nS)
   ) (
   output reg O
 );
@@ -299,9 +299,7 @@ endmodule
 (* blackbox *)
 module I_BUF #(
   parameter WEAK_KEEPER = "NONE" // Specify Pull-up/Pull-down on input (NONE/PULLUP/PULLDOWN)
-`ifdef RAPIDSILICON_INTERNAL
-  ,   parameter IOSTANDARD = "DEFAULT" // IO Standard
-`endif // RAPIDSILICON_INTERNAL
+,  parameter IOSTANDARD = "DEFAULT" // IO Standard
   ) (
   (* iopad_external_pin *)
   input logic I,
@@ -346,6 +344,20 @@ module I_DELAY #(
   output logic [5:0] DLY_TAP_VALUE,
   (* clkbuf_sink *)
   input logic CLK_IN,
+  output logic O
+);
+endmodule
+`endcelldefine
+//
+// I_FAB black box model
+// Marker Buffer for periphery to fabric transition
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module I_FAB (
+  input logic I,
   output logic O
 );
 endmodule
@@ -484,12 +496,10 @@ endmodule
 `celldefine
 (* blackbox *)
 module O_BUF_DS
-`ifdef RAPIDSILICON_INTERNAL
   #(
   parameter IOSTANDARD = "DEFAULT", // IO Standard
   parameter DIFFERENTIAL_TERMINATION = "TRUE" // Enable differential termination
   )
-`endif // RAPIDSILICON_INTERNAL
   (
   input logic I,
   (* iopad_external_pin *)
@@ -509,10 +519,8 @@ endmodule
 (* blackbox *)
 module O_BUFT_DS #(
   parameter WEAK_KEEPER = "NONE" // Enable pull-up/pull-down on output (NONE/PULLUP/PULLDOWN)
-`ifdef RAPIDSILICON_INTERNAL
-  ,   parameter IOSTANDARD = "DEFAULT", // IO Standard
+,  parameter IOSTANDARD = "DEFAULT", // IO Standard
   parameter DIFFERENTIAL_TERMINATION = "TRUE" // Enable differential termination
-`endif // RAPIDSILICON_INTERNAL
   ) (
   input logic I,
   input logic T,
@@ -533,11 +541,9 @@ endmodule
 (* blackbox *)
 module O_BUFT #(
   parameter WEAK_KEEPER = "NONE" // Enable pull-up/pull-down on output (NONE/PULLUP/PULLDOWN)
-`ifdef RAPIDSILICON_INTERNAL
-  ,   parameter IOSTANDARD = "DEFAULT", // IO Standard
+,  parameter IOSTANDARD = "DEFAULT", // IO Standard
   parameter DRIVE_STRENGTH = 2, // Drive strength in mA for LVCMOS standards
   parameter SLEW_RATE = "SLOW" // Transition rate for LVCMOS standards
-`endif // RAPIDSILICON_INTERNAL
   ) (
   input logic I,
   input logic T,
@@ -555,13 +561,11 @@ endmodule
 `celldefine
 (* blackbox *)
 module O_BUF
-`ifdef RAPIDSILICON_INTERNAL
   #(
   parameter IOSTANDARD = "DEFAULT", // IO Standard
   parameter DRIVE_STRENGTH = 2, // Drive strength in mA for LVCMOS standards
   parameter SLEW_RATE = "SLOW" // Transition rate for LVCMOS standards
   )
-`endif // RAPIDSILICON_INTERNAL
   (
   input logic I,
   (* iopad_external_pin *)
@@ -605,6 +609,20 @@ module O_DELAY #(
   output logic [5:0] DLY_TAP_VALUE,
   (* clkbuf_sink *)
   input logic CLK_IN,
+  output logic O
+);
+endmodule
+`endcelldefine
+//
+// O_FAB black box model
+// Marker Buffer for fabric to periphery transition
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module O_FAB (
+  input logic I,
   output logic O
 );
 endmodule
@@ -946,7 +964,9 @@ module TDP_RAM18KX2 #(
   input logic WEN_B2,
   input logic REN_A2,
   input logic REN_B2,
+  (* clkbuf_sink *)
   input logic CLK_A2,
+  (* clkbuf_sink *)
   input logic CLK_B2,
   input logic [1:0] BE_A2,
   input logic [1:0] BE_B2,

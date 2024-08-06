@@ -43,44 +43,14 @@
 #          - <enum_name>
 #
 # primitive name should match the filename root.
-name: O_SERDES_CLK
-desc: Output Serializer Clock
-category: periphery
+name: O_FAB
+desc: Marker Buffer for fabric to periphery transition
+category: core_fabric
 
 ports:
-   CLK_EN:
-     dir: input
-     desc: Gates output OUTPUT_CLK
-   OUTPUT_CLK:
+   I:
+     dir:  input
+     desc: Input
+   O:
      dir: output
-     desc: Clock output (Connect to output port, buffer or O_DELAY)
-     type: reg
-     default: 1'b0
-   PLL_LOCK:
-     dir: input
-     desc: PLL lock input
-   PLL_CLK:
-     dir: input
-     desc: PLL clock input
-
-# set as Verilog parameter in netlist    
-parameters:
-    DATA_RATE:
-      desc: Single or double data rate (SDR/DDR)
-      default: SDR
-      values:
-         - SDR
-         - DDR
-    CLOCK_PHASE:
-      desc: Clock phase (0,90,180,270)
-      type: integer
-      default: 0
-      values:
-        - 0
-        - 90
-        - 180
-        - 270
-
-control_signal_map:
-   CLK_EN: f2g_tx_clk_en
-   OUTPUT_CLK: g2i_tx_clk
+     desc: Output

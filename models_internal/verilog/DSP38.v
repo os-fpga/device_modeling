@@ -193,8 +193,8 @@ module DSP38 #(
 						add_sub_in = (unsigned_a_int)? a_int<<acc_fir_int : {{44{a_int[19]}},a_int}<<acc_fir_int;
 					end
 			3'b111:	begin
-        				mult_a <= COEFF_3;
-        				mult_b <= b_int;
+        				mult_a = COEFF_3;
+        				mult_b = b_int;
         				add_sub_in = (unsigned_a_int)? a_int<<acc_fir_int : {{44{a_int[19]}},a_int}<<acc_fir_int;
 					end
     	endcase
@@ -294,21 +294,23 @@ module DSP38 #(
 
 	assign Z = (OUTPUT_REG_EN == "TRUE")?z_out_reg:z_out;
 
-	// If ACC_FIR is greater than 43, result is invalid
-	always @(ACC_FIR)
-		if (ACC_FIR > 43)
-			$display("WARNING: DSP38 instance %m ACC_FIR input is %d which is greater than 43 which serves no function", ACC_FIR);
-
-	always@(*) 
-	begin
-		case(DSP_MODE)
-			"MULTIPLY_ACCUMULATE": begin  
-				if(FEEDBACK>1)
-					$display("\nWARNING: DSP38 instance %m has parameter DSP_MODE set to %s and FEEDBACK set to %0d. Valid values of FEEDBACK for this mode are 0,1 \n", DSP_MODE,FEEDBACK);
-			end
-		endcase
-		
-	end
+	`ifndef SYNTHESIS
+		// If ACC_FIR is greater than 43, result is invalid
+		always @(ACC_FIR)
+			if (ACC_FIR > 43)
+				$fatal(1,"\nERROR: DSP38 instance %m ACC_FIR input is %d which is greater than 43 which serves no function", ACC_FIR);
+	
+		always@(*) 
+		begin
+			case(DSP_MODE)
+				"MULTIPLY_ACCUMULATE": begin  
+					if(FEEDBACK>1)
+						$fatal(1,"\nERROR: DSP38 instance %m has parameter DSP_MODE set to %s and FEEDBACK set to %0d. Valid values of FEEDBACK for this mode are 0,1 \n", DSP_MODE,FEEDBACK);
+				end
+			endcase
+			
+		end
+	`endif //  `ifndef SYNTHESIS
 
  initial begin
     case(DSP_MODE)
@@ -316,24 +318,21 @@ module DSP38 #(
       "MULTIPLY_ADD_SUB" ,
       "MULTIPLY_ACCUMULATE": begin end
       default: begin
-        $display("\nError: DSP38 instance %m has parameter DSP_MODE set to %s.  Valid values are MULTIPLY, MULTIPLY_ADD_SUB, MULTIPLY_ACCUMULATE\n", DSP_MODE);
-        #1 $stop ;
+        $fatal(1,"\nError: DSP38 instance %m has parameter DSP_MODE set to %s.  Valid values are MULTIPLY, MULTIPLY_ADD_SUB, MULTIPLY_ACCUMULATE\n", DSP_MODE);
       end
     endcase
     case(OUTPUT_REG_EN)
       "TRUE" ,
       "FALSE": begin end
       default: begin
-        $display("\nError: DSP38 instance %m has parameter OUTPUT_REG_EN set to %s.  Valid values are TRUE, FALSE\n", OUTPUT_REG_EN);
-        #1 $stop ;
+        $fatal(1,"\nError: DSP38 instance %m has parameter OUTPUT_REG_EN set to %s.  Valid values are TRUE, FALSE\n", OUTPUT_REG_EN);
       end
     endcase
     case(INPUT_REG_EN)
       "TRUE" ,
       "FALSE": begin end
       default: begin
-        $display("\nError: DSP38 instance %m has parameter INPUT_REG_EN set to %s.  Valid values are TRUE, FALSE\n", INPUT_REG_EN);
-        #1 $stop ;
+        $fatal(1,"\nError: DSP38 instance %m has parameter INPUT_REG_EN set to %s.  Valid values are TRUE, FALSE\n", INPUT_REG_EN);
       end
     endcase
 

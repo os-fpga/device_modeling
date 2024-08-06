@@ -34,7 +34,7 @@ bb_models: $(BB_TARGETS)
 # we need to make TDP_RAM36K.v first as it is used by the FIFO.
 core_sim_models: models_internal/verilog/TDP_RAM36K.v
 
-sim_models: core_sim_models  $(SIM_TARGETS) $(CUST_SIM_TARGETS)
+sim_models: core_sim_models  $(SIM_TARGETS) #$(CUST_SIM_TARGETS)
 
 models_internal/verilog_blackbox/rundir/%.v: specs/%.yaml
 	mkdir -p models_internal/verilog_blackbox/rundir

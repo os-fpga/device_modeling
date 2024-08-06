@@ -316,9 +316,10 @@ def main():
         if has_parameters and has_properties:
             outstr += f"module {name} #(\n    "
             outstr += param_str
-            outstr += "`ifdef RAPIDSILICON_INTERNAL\n    ,"
+            #outstr += "`ifdef RAPIDSILICON_INTERNAL\n    ,"
+            outstr += ","
             outstr += prop_str
-            outstr += "`endif // RAPIDSILICON_INTERNAL\n"
+            #outstr += "`endif // RAPIDSILICON_INTERNAL\n"
             outstr += ") (\n"
             stream.write(outstr)
 
@@ -330,11 +331,11 @@ def main():
 
         if not has_parameters and has_properties:
             outstr += f"module {name}\n"
-            outstr += "`ifdef RAPIDSILICON_INTERNAL\n    "
+            #outstr += "`ifdef RAPIDSILICON_INTERNAL\n    "
             outstr += "#(\n"
             outstr += prop_str
             outstr += ")\n"
-            outstr += "`endif // RAPIDSILICON_INTERNAL\n"
+            #outstr += "`endif // RAPIDSILICON_INTERNAL\n"
             outstr += "(\n"
             stream.write(outstr)
 
@@ -444,8 +445,7 @@ def main():
                         format_char = "%d"
 
                     stream.write(f"\n    if (({param} < {minval}) || ({param} > {maxval})) begin\n")
-                    stream.write(f"       $display(\"{name} instance %m {param} set to incorrect value, {format_char}.  Values must be between {minval} and {maxval}.\", {param});\n")
-                    stream.write("    #1 $stop;\n")
+                    stream.write(f"       $fatal(1,\"{name} instance %m {param} set to incorrect value, {format_char}.  Values must be between {minval} and {maxval}.\", {param});\n")
                     stream.write("    end\n")
                     continue
 
@@ -469,15 +469,14 @@ def main():
                 stream.write(f"    case({param})\n")
                 stream.write(f"      {value_list_for_case}: begin end\n")
                 stream.write("      default: begin\n")
-                stream.write(f"        $display(\"\\nError: {name} instance %m has parameter {param} set to {format_char}.  Valid values are {value_list_for_msg}\\n\", {param});\n")
-                stream.write("        #1 $stop ;\n")
+                stream.write(f"        $fatal(1,\"\\nError: {name} instance %m has parameter {param} set to {format_char}.  Valid values are {value_list_for_msg}\\n\", {param});\n")
                 stream.write("      end\n")
                 stream.write("    endcase\n")
 
 
         # property checking
         if 'properties' in spec_dict:
-            stream.write('\n`ifdef RAPIDSILICON_INTERNAL\n')
+            #stream.write('\n`ifdef RAPIDSILICON_INTERNAL\n')
             for param in spec_dict["properties"]:
 
                 # determine if property is numeric or not
@@ -490,8 +489,7 @@ def main():
                         format_char = "%d"
 
                     stream.write(f"\n    if (({param} < {minval}) || ({param} > {maxval})) begin\n")
-                    stream.write(f"       $display(\"{name} instance %m {param} set to incorrect value, {format_char}.  Values must be between {minval} and {maxval}.\", {param});\n")
-                    stream.write("    #1 $stop;\n")
+                    stream.write(f"       $fatal(1,\"{name} instance %m {param} set to incorrect value, {format_char}.  Values must be between {minval} and {maxval}.\", {param});\n")
                     stream.write("    end\n")
                     continue
 
@@ -513,12 +511,11 @@ def main():
                 stream.write(f"\n    case({param})\n")
                 stream.write(f"      {value_list_for_case}: begin end\n")
                 stream.write("      default: begin\n")
-                stream.write(f"        $display(\"\\nError: {name} instance %m has parameter {param} set to %s.  Valid values are {value_list_for_msg}\\n\", {param});\n")
-                stream.write("        #1 $stop ;\n")
+                stream.write(f"        $fatal(1,\"\\nError: {name} instance %m has parameter {param} set to %s.  Valid values are {value_list_for_msg}\\n\", {param});\n")
                 stream.write("      end\n")
                 stream.write("    endcase\n")
 
-            stream.write('`endif // RAPIDSILICON_INTERNAL\n')
+            #stream.write('`endif // RAPIDSILICON_INTERNAL\n')
 
         if needs_checking(spec_dict):
             stream.write("\n  end\n")

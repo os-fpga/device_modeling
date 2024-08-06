@@ -159,8 +159,8 @@
 						add_sub_in = (unsigned_a_int)? a_int<<acc_fir_int : {{44{a_int[19]}},a_int}<<acc_fir_int;
 					end
 			3'b111:	begin
-        				mult_a <= COEFF_3;
-        				mult_b <= b_int;
+        				mult_a = COEFF_3;
+        				mult_b = b_int;
         				add_sub_in = (unsigned_a_int)? a_int<<acc_fir_int : {{44{a_int[19]}},a_int}<<acc_fir_int;
 					end
     	endcase
@@ -260,19 +260,21 @@
 
 	assign Z = (OUTPUT_REG_EN == "TRUE")?z_out_reg:z_out;
 
-	// If ACC_FIR is greater than 43, result is invalid
-	always @(ACC_FIR)
-		if (ACC_FIR > 43)
-			$display("WARNING: DSP38 instance %m ACC_FIR input is %d which is greater than 43 which serves no function", ACC_FIR);
-
-	always@(*) 
-	begin
-		case(DSP_MODE)
-			"MULTIPLY_ACCUMULATE": begin  
-				if(FEEDBACK>1)
-					$display("\nWARNING: DSP38 instance %m has parameter DSP_MODE set to %s and FEEDBACK set to %0d. Valid values of FEEDBACK for this mode are 0,1 \n", DSP_MODE,FEEDBACK);
-			end
-		endcase
-		
-	end
+	`ifndef SYNTHESIS
+		// If ACC_FIR is greater than 43, result is invalid
+		always @(ACC_FIR)
+			if (ACC_FIR > 43)
+				$fatal(1,"\nERROR: DSP38 instance %m ACC_FIR input is %d which is greater than 43 which serves no function", ACC_FIR);
+	
+		always@(*) 
+		begin
+			case(DSP_MODE)
+				"MULTIPLY_ACCUMULATE": begin  
+					if(FEEDBACK>1)
+						$fatal(1,"\nERROR: DSP38 instance %m has parameter DSP_MODE set to %s and FEEDBACK set to %0d. Valid values of FEEDBACK for this mode are 0,1 \n", DSP_MODE,FEEDBACK);
+				end
+			endcase
+			
+		end
+	`endif //  `ifndef SYNTHESIS
 

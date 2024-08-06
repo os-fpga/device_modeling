@@ -48,6 +48,9 @@ def gen_param_string(pdict):
 
         if 'default' in pdict[param]:
             default = pdict[param]['default']
+            if 'type' in pdict[param]:
+                if pdict[param]['type'] == "real": # convert the real values to int for blackbox as float/real are not synthesizable
+                    default = int(default)
             if is_real_param(pdict[param]) or is_vector_param(pdict[param]):
                 # integers and vectors don't need quotes
                 param_str = f"  parameter {vector_str}{param} = {default}"
@@ -127,9 +130,9 @@ def generate_port_str(port):
 % if has_parameters and has_properties:
 module ${dd['name']} #(
 ${param_str}
-`ifdef RAPIDSILICON_INTERNAL
-  , ${prop_str}
-`endif // RAPIDSILICON_INTERNAL
+##`ifdef RAPIDSILICON_INTERNAL
+,${prop_str}
+##`endif // RAPIDSILICON_INTERNAL
   ) (
 % endif
 ## ONLY PARAMETERS
@@ -141,11 +144,11 @@ ${param_str}
 ## ONLY PROPERTIES
 % if not has_parameters and has_properties:
 module ${dd['name']}
-`ifdef RAPIDSILICON_INTERNAL
+##`ifdef RAPIDSILICON_INTERNAL
   #(
 ${prop_str}
   )
-`endif // RAPIDSILICON_INTERNAL
+##`endif // RAPIDSILICON_INTERNAL
   (
 % endif
 ## NEITHER PARAMETERS NOR PROPERTIES
