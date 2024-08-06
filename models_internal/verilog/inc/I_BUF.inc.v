@@ -8,4 +8,7 @@
 
   assign O = EN ? I : 1'b0;
 
-
+  specify
+    if (EN == 1'b1)
+    (I => O) = (0, 0);
+  endspecify

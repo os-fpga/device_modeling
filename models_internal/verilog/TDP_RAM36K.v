@@ -488,8 +488,7 @@ module TDP_RAM36K #(
       18 ,
       36: begin end
       default: begin
-        $display("\nError: TDP_RAM36K instance %m has parameter WRITE_WIDTH_A set to %d.  Valid values are 1, 2, 4, 9, 18, 36\n", WRITE_WIDTH_A);
-        #1 $stop ;
+        $fatal(1,"\nError: TDP_RAM36K instance %m has parameter WRITE_WIDTH_A set to %d.  Valid values are 1, 2, 4, 9, 18, 36\n", WRITE_WIDTH_A);
       end
     endcase
     case(READ_WIDTH_A)
@@ -500,8 +499,7 @@ module TDP_RAM36K #(
       18 ,
       36: begin end
       default: begin
-        $display("\nError: TDP_RAM36K instance %m has parameter READ_WIDTH_A set to %d.  Valid values are 1, 2, 4, 9, 18, 36\n", READ_WIDTH_A);
-        #1 $stop ;
+        $fatal(1,"\nError: TDP_RAM36K instance %m has parameter READ_WIDTH_A set to %d.  Valid values are 1, 2, 4, 9, 18, 36\n", READ_WIDTH_A);
       end
     endcase
     case(WRITE_WIDTH_B)
@@ -512,8 +510,7 @@ module TDP_RAM36K #(
       18 ,
       36: begin end
       default: begin
-        $display("\nError: TDP_RAM36K instance %m has parameter WRITE_WIDTH_B set to %d.  Valid values are 1, 2, 4, 9, 18, 36\n", WRITE_WIDTH_B);
-        #1 $stop ;
+        $fatal(1,"\nError: TDP_RAM36K instance %m has parameter WRITE_WIDTH_B set to %d.  Valid values are 1, 2, 4, 9, 18, 36\n", WRITE_WIDTH_B);
       end
     endcase
     case(READ_WIDTH_B)
@@ -524,8 +521,7 @@ module TDP_RAM36K #(
       18 ,
       36: begin end
       default: begin
-        $display("\nError: TDP_RAM36K instance %m has parameter READ_WIDTH_B set to %d.  Valid values are 1, 2, 4, 9, 18, 36\n", READ_WIDTH_B);
-        #1 $stop ;
+        $fatal(1,"\nError: TDP_RAM36K instance %m has parameter READ_WIDTH_B set to %d.  Valid values are 1, 2, 4, 9, 18, 36\n", READ_WIDTH_B);
       end
     endcase
 
