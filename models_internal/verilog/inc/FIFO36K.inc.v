@@ -163,7 +163,7 @@ if ( FIFO_TYPE == "SYNCHRONOUS" )  begin: SYNCRONOUS
 
 else begin: ASYNCRONOUS                // ASYNCRONOUS LOGIC 
 
-  reg fwft = 1'b0;
+reg fwft = 1'b0;
 
 
 localparam DATA_WIDTH_WRITE = DATA_WRITE_WIDTH;
@@ -201,7 +201,7 @@ parameter W_PTR_WIDTH = $clog2(fifo_depth_write);
 parameter R_PTR_WIDTH = $clog2(fifo_depth_read);
 
 wire [W_PTR_WIDTH:0] b_wptr_sync, b_wptr_w;
-wire [R_PTR_WIDTH:0] b_rptr_sync, b_rptr_w, b_rptr_w1;
+wire [R_PTR_WIDTH:0] b_rptr_sync, b_rptr_w;
 
 
   TDP_RAM36K #(
@@ -262,7 +262,7 @@ wire [R_PTR_WIDTH:0] b_rptr_sync, b_rptr_w, b_rptr_w1;
     
     if(DATA_WIDTH_WRITE==36) begin
       assign ram_wr_data = {{36-DATA_WIDTH_WRITE{1'b0}}, WR_DATA[DATA_WIDTH_WRITE-5:0]};
-      assign ram_wr_parity = {2'b00, WR_DATA[DATA_WIDTH_WRITE-1:DATA_WIDTH_WRITE-2]};
+      assign ram_wr_parity = {2'b00, WR_DATA[DATA_WIDTH_WRITE-1:DATA_WIDTH_WRITE-4]};
     end
 
 
@@ -324,15 +324,6 @@ assign b_rptr_sync = d_out2;
 
   assign b_wptr_w = b_wptr;
 
-  reg [2:0] rem,rem1, rem2, rem3;
-
-  always @(posedge WR_CLK) begin
-    rem1 <= b_wptr_next%(SCALING_FACTOR_WPTR);
-  end
-
- always @(posedge WR_CLK) begin
-    rem2 <= b_rptr_sync%(SCALING_FACTOR_WPTR);
-  end
 
   assign diff_ptr0 =(DATA_WIDTH_WRITE>DATA_WIDTH_READ)? /* W>R */ ((((b_wptr_next/SCALING_FACTOR_WPTR  >= (b_rptr_sync/SCALING_FACTOR_RPTR))? (b_wptr_next/SCALING_FACTOR_WPTR-(b_rptr_sync/SCALING_FACTOR_RPTR)): (b_wptr_next/SCALING_FACTOR_WPTR+(1<<(W_PTR_WIDTH+1))-(b_rptr_sync/SCALING_FACTOR_RPTR)))))
 
@@ -399,7 +390,6 @@ always @(*) begin
 end
 
 assign b_rptr_w = b_rptr_next;
-assign b_rptr_w1 = b_rptr;
 
 assign diff_ptr1 = (DATA_WIDTH_WRITE > DATA_WIDTH_READ)?   ( ((b_wptr_sync/SCALING_FACTOR_WPTR) >= (b_rptr_next/SCALING_FACTOR_RPTR))? (b_wptr_sync/SCALING_FACTOR_WPTR-(b_rptr_next/SCALING_FACTOR_RPTR)): (b_wptr_sync/SCALING_FACTOR_WPTR+(1<<(W_PTR_WIDTH+1))-(b_rptr_next/SCALING_FACTOR_RPTR)))
  
@@ -550,7 +540,7 @@ assign p_empty = (diff_ptr1 ==PROG_EMPTY_THRESH || diff_ptr1 <=PROG_EMPTY_THRESH
 
 /*---------------------------------------------------------------*/
 
-/*------------ Adding logic of OVERFLOW and UNDERFLOW -----------*/
+/*--------- Adding logic of OVERFLOW and UNDERFLOW -----------*/
 
     always @(posedge WR_CLK) begin
       if (RESET) begin
@@ -559,9 +549,9 @@ assign p_empty = (diff_ptr1 ==PROG_EMPTY_THRESH || diff_ptr1 <=PROG_EMPTY_THRESH
       else if (FULL & WR_EN ) begin
        OVERFLOW <= 1;
       end
-      else begin 
-         OVERFLOW <= OVERFLOW;
-       end
+      // else begin 
+      //    OVERFLOW <= OVERFLOW;
+      //  end
     end
 
     always @(posedge RD_CLK) begin 
@@ -570,9 +560,6 @@ assign p_empty = (diff_ptr1 ==PROG_EMPTY_THRESH || diff_ptr1 <=PROG_EMPTY_THRESH
         end
         else if(RD_EN & OVERFLOW) begin
           OVERFLOW <= 0;
-        end
-        else begin
-          OVERFLOW <= OVERFLOW;
         end
     end
 
@@ -584,10 +571,6 @@ assign p_empty = (diff_ptr1 ==PROG_EMPTY_THRESH || diff_ptr1 <=PROG_EMPTY_THRESH
       else if (EMPTY & RD_EN) begin
          UNDERFLOW <= 1;
       end
-      else begin
-         UNDERFLOW <= UNDERFLOW;
-      end
-
     end
 
     always @(posedge WR_CLK) begin
@@ -597,10 +580,10 @@ assign p_empty = (diff_ptr1 ==PROG_EMPTY_THRESH || diff_ptr1 <=PROG_EMPTY_THRESH
       else if (EMPTY & WR_EN ) begin
        UNDERFLOW <= 0;
       end
-      else begin
-       UNDERFLOW <= UNDERFLOW;
-      end
     end
 
 end : ASYNCRONOUS
+
+
+
 
