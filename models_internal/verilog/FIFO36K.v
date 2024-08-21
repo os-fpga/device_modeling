@@ -31,7 +31,6 @@ module FIFO36K #(
   output reg UNDERFLOW = 1'b0 // FIFO underflow error flag
 );
 
-
 if ( FIFO_TYPE == "SYNCHRONOUS" )  begin: SYNCRONOUS
 
   
@@ -493,12 +492,14 @@ assign p_empty = (diff_ptr1 ==PROG_EMPTY_THRESH || diff_ptr1 <=PROG_EMPTY_THRESH
 // -2          
         if (DATA_WIDTH_WRITE == 9 && DATA_WIDTH_READ==18) begin
 
-              if(b_wptr_next==2 || b_wptr_next==4098 || b_wptr_next==2049) begin
-              fwft=1;
-              end   
-              else begin
-              fwft=fwft;
-              end  
+              // if(b_wptr_next==2 || b_wptr_next==4098 || b_wptr_next==2049) begin
+              // fwft=1;
+              // end   
+              // else begin
+              // fwft=fwft;
+              // end  
+
+              fwft <= (EMPTY && WR_EN && !fwft)? 1 : fwft;
 
               if(b_wptr_next==1 || b_wptr_next==4097 ) begin
                 fwft_data [7:0] <= WR_DATA[7:0] ;
@@ -512,12 +513,14 @@ assign p_empty = (diff_ptr1 ==PROG_EMPTY_THRESH || diff_ptr1 <=PROG_EMPTY_THRESH
 // -3 
         if (DATA_WIDTH_WRITE == 9 && DATA_WIDTH_READ==36) begin
 
-              if(b_wptr_next==4 || b_wptr_next==8196 || b_wptr_next==4100) begin
-              fwft=1;
-              end   
-              else begin
-              fwft=fwft;
-              end  
+              // if(b_wptr_next==4 || b_wptr_next==8196 || b_wptr_next==4100) begin
+              // fwft=1;
+              // end   
+              // else begin
+              // fwft=fwft;
+              // end  
+
+              fwft <= (EMPTY && WR_EN && !fwft)? 1 : fwft;
 
               if(b_wptr_next==1 || b_wptr_next==4097) begin
                 fwft_data [7:0] <= WR_DATA[7:0];
@@ -540,12 +543,14 @@ assign p_empty = (diff_ptr1 ==PROG_EMPTY_THRESH || diff_ptr1 <=PROG_EMPTY_THRESH
 // -4 
         if (DATA_WIDTH_WRITE == 18 && DATA_WIDTH_READ==36) begin
 
-              if(b_wptr_next==2 || b_wptr_next==4098 || b_wptr_next==2049) begin
-              fwft=1;
-              end   
-              else begin
-              fwft=fwft;
-              end  
+              // if(b_wptr_next==2 || b_wptr_next==4098 || b_wptr_next==2049) begin
+              // fwft=1;
+              // end   
+              // else begin
+              // fwft=fwft;
+              // end  
+              
+              fwft <= (EMPTY && WR_EN && !fwft)? 1 : fwft;
 
               if(b_wptr_next==1 || b_wptr_next==4097  ) begin
                 fwft_data [15:0] <= WR_DATA[15:0];
@@ -581,9 +586,6 @@ assign p_empty = (diff_ptr1 ==PROG_EMPTY_THRESH || diff_ptr1 <=PROG_EMPTY_THRESH
       else if (FULL & WR_EN ) begin
        OVERFLOW <= 1;
       end
-      // else begin 
-      //    OVERFLOW <= OVERFLOW;
-      //  end
     end
 
     always @(posedge RD_CLK) begin 
@@ -615,10 +617,6 @@ assign p_empty = (diff_ptr1 ==PROG_EMPTY_THRESH || diff_ptr1 <=PROG_EMPTY_THRESH
     end
 
 end : ASYNCRONOUS
-
-
-
-
  initial begin
     case(DATA_WRITE_WIDTH)
       9 ,
