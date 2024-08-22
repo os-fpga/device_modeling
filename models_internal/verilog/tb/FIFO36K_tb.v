@@ -1,3 +1,4 @@
+
 `ifdef ASYNC_FIFO
 
 module FIFO36K_tb();
@@ -18,7 +19,7 @@ module FIFO36K_tb();
   wire UNDERFLOW;// FIFO underflow error flag
 
   parameter DATA_WRITE_WIDTH = 36; // FIFO data width (1-36)
-  parameter DATA_READ_WIDTH = 9; // FIFO data width (1-36)
+  parameter DATA_READ_WIDTH = 36; // FIFO data width (1-36)
 
   parameter FIFO_TYPE = "ASYNCHRONOUS"; // Synchronous or Asynchronous data transfer (SYNCHRONOUS/ASYNCHRONOUS)
   parameter [11:0] PROG_EMPTY_THRESH = 12'h004; // 12-bit Programmable empty depth
@@ -57,7 +58,7 @@ reg [8:0] pop_data4;
   integer wren_cnt=0;
   reg [8:0] local_queue [$];
   integer fifo_number;
-  bit debug=0;
+  bit debug=1;
 
   //clock//
   initial begin
@@ -233,13 +234,14 @@ integer count1=0;
   end
 
 // read 
-    assign count1= (DATA_READ_WIDTH>=DATA_WRITE_WIDTH)?  1: DATA_WRITE_WIDTH/DATA_READ_WIDTH; // For example ? = 4
+  assign count1= (DATA_READ_WIDTH>=DATA_WRITE_WIDTH)?  1: DATA_WRITE_WIDTH/DATA_READ_WIDTH; // For example ? = 4
 
   repeat(count1) begin
     pop();
   end
   repeat(3) @(posedge WR_CLK);
   @(negedge WR_CLK);
+
   if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_0110) begin
     begin $display("ERROR: OVERFLOW IS DE-ASSERTED AND PROG FULL AND ALMOST FULL ASSERTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
   end
@@ -318,7 +320,8 @@ task push();
       @(negedge WR_CLK);
 
 /* ----------------------------------- push byte date ---------------------------------- */
-  //  if (DATA_READ_WIDTH==9) begin
+// R-9 
+   if (DATA_READ_WIDTH==9) begin
    
       if(DATA_WRITE_WIDTH==9) begin  // 9
     
@@ -327,7 +330,7 @@ task push();
            fwft_data1 = WR_DATA;
         
         end    
-            local_queue.push_back(WR_DATA[8:0]);
+            local_queue.push_back({WR_DATA[8], WR_DATA[7:0]});
       end 
 
       else if(DATA_WRITE_WIDTH==18) begin  // 18
@@ -351,27 +354,131 @@ task push();
         local_queue.push_back({WR_DATA[34],WR_DATA[23:16]});  
         local_queue.push_back({WR_DATA[35],WR_DATA[31:24]});  
       end 
- 
+   end
+// R-18
+  if (DATA_READ_WIDTH==18) begin
+   
+      if(DATA_WRITE_WIDTH==9) begin  // 9
+    
+        if (count_enteries_push==0) begin
+       
+           fwft_data1 = WR_DATA;
+
+        end
+
+        else if (count_enteries_push==1) begin
+
+           fwft_data2 = WR_DATA;
+        
+        end    
+            local_queue.push_back({WR_DATA[8], WR_DATA[7:0]});
+      end 
+
+      else if(DATA_WRITE_WIDTH==18) begin  // 18
+        
+        if (count_enteries_push==0) begin
+           fwft_data1 = {WR_DATA[16],WR_DATA[7:0]};
+           fwft_data2 = {WR_DATA[17],WR_DATA[15:8]};
+        end    
+        local_queue.push_back({WR_DATA[16],WR_DATA[7:0]});  
+        local_queue.push_back({WR_DATA[17],WR_DATA[15:8]});  
+      end
+
+      else begin     // 36
+        if (count_enteries_push==0) begin
+           fwft_data1 = {WR_DATA[32],WR_DATA[7:0]};
+           fwft_data2 = {WR_DATA[33],WR_DATA[15:8]};
+           fwft_data3 = {WR_DATA[34],WR_DATA[23:16]};
+           fwft_data4 = {WR_DATA[35],WR_DATA[31:24]};
+        end    
+        local_queue.push_back({WR_DATA[32],WR_DATA[7:0]});  
+        local_queue.push_back({WR_DATA[33],WR_DATA[15:8]});  
+        local_queue.push_back({WR_DATA[34],WR_DATA[23:16]});  
+        local_queue.push_back({WR_DATA[35],WR_DATA[31:24]});  
+      end 
+  end
+
+// R-36
+
+  if (DATA_READ_WIDTH==36) begin
+   
+      if(DATA_WRITE_WIDTH==9) begin  // 9
+    
+        if (count_enteries_push==0) begin
+       
+           fwft_data1 = WR_DATA;
+
+        end
+
+        else if (count_enteries_push==1) begin
+
+           fwft_data2 = WR_DATA;
+        
+        end
+
+        else if (count_enteries_push==2) begin
+
+           fwft_data3 = WR_DATA;
+        
+        end 
+
+        else if (count_enteries_push==3) begin
+
+           fwft_data4 = WR_DATA;
+        
+        end     
+            local_queue.push_back({WR_DATA[8], WR_DATA[7:0]});
+      end 
+
+      else if(DATA_WRITE_WIDTH==18) begin  // 18
+        
+        if (count_enteries_push==0) begin
+           fwft_data1 = {WR_DATA[16],WR_DATA[7:0]};
+           fwft_data2 = {WR_DATA[17],WR_DATA[15:8]};
+        end
+        else if (count_enteries_push==1) begin
+           fwft_data3 = {WR_DATA[16],WR_DATA[7:0]};
+           fwft_data4 = {WR_DATA[17],WR_DATA[15:8]};
+        end   
+        local_queue.push_back({WR_DATA[16],WR_DATA[7:0]});  
+        local_queue.push_back({WR_DATA[17],WR_DATA[15:8]});  
+      end
+
+      else begin     // 36
+        if (count_enteries_push==0) begin
+           fwft_data1 = {WR_DATA[32],WR_DATA[7:0]};
+           fwft_data2 = {WR_DATA[33],WR_DATA[15:8]};
+           fwft_data3 = {WR_DATA[34],WR_DATA[23:16]};
+           fwft_data4 = {WR_DATA[35],WR_DATA[31:24]};
+        end    
+        local_queue.push_back({WR_DATA[32],WR_DATA[7:0]});  
+        local_queue.push_back({WR_DATA[33],WR_DATA[15:8]});  
+        local_queue.push_back({WR_DATA[34],WR_DATA[23:16]});  
+        local_queue.push_back({WR_DATA[35],WR_DATA[31:24]});  
+      end 
+  end
+
   count_enteries_push=count_enteries_push+1;
 
 /* ----------------------------------------------------------------- */
       // $display("i== %0d ; check WR_DATA %0h; size %0d",i,WR_DATA, $size(WR_DATA));
       WR_EN=0;
+
 endtask : push 
 
 
-
-
 task pop();
-  
+
+// R-9
+
   if (DATA_READ_WIDTH==9) begin
     
     if(DATA_WRITE_WIDTH==9) begin
-        exp_dout = local_queue.pop_front();
         if (count_enteries_pop==4096) begin
           compare(RD_DATA[8:0], fwft_data1);
         end
         else begin
+          exp_dout = local_queue.pop_front();
           compare(RD_DATA,exp_dout);
         end
     end
@@ -379,9 +486,6 @@ task pop();
     if(DATA_WRITE_WIDTH==36) begin
         if (count_enteries_pop==4096) begin
           compare(RD_DATA, fwft_data1);
-          exp_dout = local_queue.pop_front();
-          exp_dout = local_queue.pop_front();
-          exp_dout = local_queue.pop_front();
         end
         else begin
           exp_dout = local_queue.pop_front();
@@ -403,16 +507,15 @@ task pop();
   end
 ///////////////////////////////////////////////////////////////////////////////////////
 
+// R-18
 
   else if (DATA_READ_WIDTH==18 ) begin
     
     if(DATA_WRITE_WIDTH==9) begin
        if (count_enteries_pop==2048) begin
-          pop_data1= local_queue.pop_front();
-          pop_data2= local_queue.pop_front();
-          $display("pop_data1%0h",pop_data1);
-          $display("pop_data2 %0h",pop_data2);
-          compare(RD_DATA[8:0], fwft_data1);
+
+          compare({RD_DATA[16],RD_DATA[7:0]}, fwft_data1);
+          compare({RD_DATA[17],RD_DATA[15:8]}, fwft_data2);
 
         end
         else begin
@@ -420,7 +523,6 @@ task pop();
             pop_data2= local_queue.pop_front();
             compare({RD_DATA[16], RD_DATA[7:0]},  {pop_data1[8], pop_data1[7:0]});
             compare({RD_DATA[17], RD_DATA[15:8]}, {pop_data2[8], pop_data2[7:0]});
-        //  $display("count_enteries_pop %0d  RD_DATA %0h", count_enteries_pop, RD_DATA);
         end
     end
   
@@ -428,7 +530,9 @@ task pop();
 
        if (count_enteries_pop==2048) begin
           pop_data1= local_queue.pop_front();
-          compare(RD_DATA[8:0], fwft_data1);
+          pop_data2= local_queue.pop_front();
+          compare({RD_DATA[16],RD_DATA[7:0]}, fwft_data1);
+          compare({RD_DATA[17],RD_DATA[15:8]}, fwft_data2);
         end
         
         else begin
@@ -443,13 +547,16 @@ task pop();
       if(DATA_WRITE_WIDTH==36) begin
 
        if (count_enteries_pop==2048) begin
-          pop_data1= local_queue.pop_front();
+
           compare({RD_DATA[16], RD_DATA[7:0]}, fwft_data1);
+          compare({RD_DATA[17], RD_DATA[15:8]}, fwft_data2);
         end
+
         else begin
           pop_data1= local_queue.pop_front();
           pop_data2= local_queue.pop_front();
-          compare( {{RD_DATA[17], RD_DATA[15:8]},{RD_DATA[16], RD_DATA[7:0]}}, {{pop_data2[8], pop_data2[7:0]}  ,{pop_data1[8], pop_data1[7:0]}});
+          compare({RD_DATA[16], RD_DATA[7:0]}, {pop_data1[8], pop_data1[7:0]});
+          compare( {{RD_DATA[17], RD_DATA[15:8]}}, {{pop_data2[8], pop_data2[7:0]}});
         end
     end
 
@@ -457,13 +564,19 @@ task pop();
 
 ///////////////////////////////////////////////////////////////////////////////////////
 
+// R-36
+
   else if (DATA_READ_WIDTH==36 ) begin
     
     if(DATA_WRITE_WIDTH==9) begin
 
        if (count_enteries_pop==1024) begin
-          pop_data1= local_queue.pop_front();
+
           compare({RD_DATA[32], RD_DATA[7:0]}, fwft_data1);
+          compare({RD_DATA[33], RD_DATA[15:8]}, fwft_data2);
+          compare({RD_DATA[34], RD_DATA[23:16]}, fwft_data3);
+          compare({RD_DATA[35], RD_DATA[31:24]}, fwft_data4);
+
         end
 
         else begin
@@ -480,9 +593,13 @@ task pop();
     end
   
       if(DATA_WRITE_WIDTH==18) begin
-       if (count_enteries_pop==1024) begin
-          pop_data1= local_queue.pop_front();
-          compare(RD_DATA[8:0], fwft_data1);
+
+        if (count_enteries_pop==1024) begin
+
+          compare({RD_DATA[32],RD_DATA[7:0]}, fwft_data1);
+          compare({RD_DATA[33],RD_DATA[15:8]}, fwft_data2);
+          compare({RD_DATA[34],RD_DATA[23:16]}, fwft_data3);
+          compare({RD_DATA[35],RD_DATA[31:24]}, fwft_data4);
 
         end
         else begin
@@ -503,9 +620,13 @@ task pop();
 
       if(DATA_WRITE_WIDTH==36) begin
 
-       if (count_enteries_pop==1024) begin
-          pop_data1= local_queue.pop_front();
-          compare(RD_DATA[7:0], fwft_data1);
+       if (count_enteries_pop==1024) begin   // Last enter poped is same as first word fall through
+
+          compare({RD_DATA[32],RD_DATA[7:0]}, fwft_data1);
+          compare({RD_DATA[33],RD_DATA[15:8]}, fwft_data2);
+          compare({RD_DATA[34],RD_DATA[23:16]}, fwft_data3);
+          compare({RD_DATA[35],RD_DATA[31:24]}, fwft_data4);
+
         end
         else begin
             pop_data1= local_queue.pop_front();
@@ -595,14 +716,19 @@ endtask : pop
     end
 endtask
 
+integer count_cmp=0;
+
 task compare(input reg [DATA_READ_WIDTH-1:0] RD_DATA, exp_dout);
 
   if(RD_DATA !== exp_dout) begin
     $display("RD_DATA mismatch. DUT_Out: %0h, Expected_Out: %0h, Time: %0t", RD_DATA, exp_dout,$time);
     error = error+1;
   end
-  else if(debug)
-    $display("RD_DATA match. DUT_Out: %0d, Expected_Out: %0d, Time: %0t", RD_DATA, exp_dout,$time);
+  else if(debug) begin
+    $display("RD_DATA match. DUT_Out: %0h, Expected_Out: %0h, Time: %0t", RD_DATA, exp_dout,$time);
+    count_cmp = count_cmp+1;
+    $display("counting of byte compared including first word fall through, count is: %0d", count_cmp);
+  end
 endtask
 
 endmodule
