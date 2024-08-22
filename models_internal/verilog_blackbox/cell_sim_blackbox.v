@@ -488,6 +488,43 @@ module LUT6 #(
 endmodule
 `endcelldefine
 //
+// MIPI_TX black box model
+// MIPI Transmitter
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module MIPI_TX #(
+  parameter WIDTH = 4, // Width of input data to serializer (3-10)
+  parameter EN_ODLY = "FALSE", // True or False
+  parameter LANE_MODE = "Master", // Master or Slave
+  parameter DELAY = 0 // Fixed TAP delay value (0-63)
+  ) (
+  input logic RST,
+  input logic RX_CLK,
+  input logic PLL_LOCK,
+  (* clkbuf_sink *)
+  input logic CLK_IN,
+  input logic [WIDTH-1:0] HS_TX_DATA,
+  input logic HS_TXD_VALID,
+  input logic HS_EN,
+  input logic TX_LP_DP,
+  input logic TX_LP_DN,
+  input logic LP_EN,
+  input logic TX_ODT_EN,
+  input logic DLY_LOAD,
+  input logic DLY_ADJ,
+  input logic DLY_INCDEC,
+  output logic TX_OE,
+  output logic TX_DP,
+  output logic TX_DN,
+  input logic CHANNEL_BOND_SYNC_IN,
+  output logic CHANNEL_BOND_SYNC_OUT
+);
+endmodule
+`endcelldefine
+//
 // O_BUF_DS black box model
 // Output differential buffer
 //
