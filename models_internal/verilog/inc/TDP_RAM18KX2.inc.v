@@ -1,5 +1,4 @@
 	
-	
 	//RAM1
 	localparam A1_DATA_WRITE_WIDTH = calc_data_width(WRITE_WIDTH_A1);
   localparam A1_WRITE_ADDR_WIDTH = calc_depth(A1_DATA_WRITE_WIDTH);
@@ -104,13 +103,13 @@
             `endif
           end
         end
-        else
+        else begin
           `ifndef FIFO
             // verilator lint_off BLKANDNBLK
             RPARITY_A1 <= 2'bx;
             // verilator lint_on BLKANDNBLK
           `endif
-
+        end
       always @(posedge CLK_B1)
         if (WEN_B1) begin
           for (k_p = find_b1_write_index(ADDR_B1)*B1_PARITY_WRITE_WIDTH; k_p < find_b1_write_index(ADDR_B1)*B1_PARITY_WRITE_WIDTH+B1_PARITY_WRITE_WIDTH; k_p = k_p + 1) begin
@@ -147,12 +146,13 @@
             `endif
           end
         end
-        else
+        else begin
           `ifndef FIFO
             // verilator lint_off BLKANDNBLK
             RPARITY_B1 <= 2'bx;
             // verilator lint_on BLKANDNBLK
           `endif
+        end
     end
   endgenerate
 
@@ -216,12 +216,13 @@
       #collision_window;
       collision_a_read_flag = 0;
     end
-    else
+    else begin
       `ifndef FIFO
         // verilator lint_off BLKANDNBLK
         RDATA_A1 <= 16'bx;
         // verilator lint_on BLKANDNBLK
       `endif
+    end
 
   always @(posedge CLK_B1)
     if (WEN_B1) begin
@@ -269,13 +270,13 @@
       #collision_window;
       collision_b_read_flag = 0;
     end
-    else
+    else begin
       `ifndef FIFO
         // verilator lint_off BLKANDNBLK
         RDATA_B1 <= 16'bx;
         // verilator lint_on BLKANDNBLK
       `endif
-
+    end
   // Collision checking
     always @(posedge collision_a_write_flag) begin
       if (collision_b_write_flag && (collision_a_address == collision_b_address)) begin
@@ -415,12 +416,13 @@
             `endif
           end
         end
-        else
+        else begin
           `ifndef FIFO
             // verilator lint_off BLKANDNBLK
             RPARITY_A2 <= 2'bx;
             // verilator lint_on BLKANDNBLK
           `endif
+        end
 
       always @(posedge CLK_B2)
         if (WEN_B2) begin
@@ -458,12 +460,13 @@
             `endif
           end
         end
-        else
+        else begin
           `ifndef FIFO
             // verilator lint_off BLKANDNBLK
             RPARITY_B2 <= 2'bx;
             // verilator lint_on BLKANDNBLK
           `endif
+        end
     end
   endgenerate
 
@@ -527,13 +530,13 @@
       #collision_window;
       collision_a2_read_flag = 0;
     end
-    else
-      `ifndef FIFO
+    else begin
+      `ifndef FIFO 
         // verilator lint_off BLKANDNBLK
         RDATA_A2 <= 16'bx;
         // verilator lint_on BLKANDNBLK
       `endif
-
+    end
   always @(posedge CLK_B2)
     if (WEN_B2) begin
       for (p = find_b2_write_index(ADDR_B2)*B2_DATA_WRITE_WIDTH; p < find_b2_write_index(ADDR_B2)*B2_DATA_WRITE_WIDTH+B2_DATA_WRITE_WIDTH; p = p + 1) begin
@@ -580,12 +583,13 @@
       #collision_window;
       collision_b2_read_flag = 0;
     end
-    else
+    else begin
       `ifndef FIFO
         // verilator lint_off BLKANDNBLK
         RDATA_B2 <= 16'bx;
         // verilator lint_on BLKANDNBLK
       `endif
+    end
 
     // Collision checking
     always @(posedge collision_a2_write_flag) begin
