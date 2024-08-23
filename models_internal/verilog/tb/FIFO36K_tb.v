@@ -63,12 +63,12 @@ reg [8:0] pop_data4;
   //clock//
   initial begin
     WR_CLK = 1'b0;
-    forever #3 WR_CLK = ~WR_CLK;
+    forever #123 WR_CLK = ~WR_CLK;
 end
 
   initial begin
       RD_CLK = 1'b0;
-      forever #5 RD_CLK = ~RD_CLK;
+      forever #573 RD_CLK = ~RD_CLK;
   end
 
    FIFO36K #(
@@ -207,7 +207,7 @@ integer count1=0;
     for (int i= ( (DEPTH_WRITE) - (count*PROG_FULL_THRESH)-(count) ) ; i< ( DEPTH_WRITE-(count) -count); i++ ) begin
       push();
     end
-
+  
     if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_0110) begin
       begin $display("ERROR: ALMOST FULL IS NOT ASSERTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
     end
@@ -227,20 +227,29 @@ integer count1=0;
    repeat(1) begin
     push();
    end
-      @(negedge WR_CLK);
+      // @(negedge WR_CLK);
 
   if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_1011) begin
     begin $display("ERROR: OVERFLOW IS NOT ASSERTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
   end
 
+#100;
+
+
 // read 
   assign count1= (DATA_READ_WIDTH>=DATA_WRITE_WIDTH)?  1: DATA_WRITE_WIDTH/DATA_READ_WIDTH; // For example ? = 4
-
+  
+  compare_pop_data();
   repeat(count1) begin
     pop();
+    compare_pop_data();
   end
+  
   repeat(3) @(posedge WR_CLK);
   @(negedge WR_CLK);
+  
+  // repeat (10) @ (posedge WR_CLK);
+  $display("Check time : %0t", $time);
 
   if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_0110) begin
     begin $display("ERROR: OVERFLOW IS DE-ASSERTED AND PROG FULL AND ALMOST FULL ASSERTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
@@ -249,6 +258,7 @@ integer count1=0;
 
   repeat(count1) begin
     pop();
+    compare_pop_data();
    end
   // if(count1>1) begin
   repeat(3) @(posedge WR_CLK);
@@ -261,6 +271,7 @@ integer count1=0;
 // prog full de asset 
     for (int i=count1; i<(count1*PROG_FULL_THRESH); i++ ) begin
       pop();
+      compare_pop_data();
     end
     // if(count>1) begin
     repeat(3)@(posedge WR_CLK);
@@ -273,6 +284,7 @@ integer count1=0;
 // prog empty assert 
     for (int i= (count1*PROG_EMPTY_THRESH); i< ( DEPTH_READ - (count1*PROG_EMPTY_THRESH)-(count1) ); i++ ) begin
       pop();
+      compare_pop_data();
     end
     // @(negedge RD_CLK);
     if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0010_0000) begin
@@ -283,6 +295,7 @@ integer count1=0;
 
     for (int i= ( (DEPTH_READ) - (count1*PROG_EMPTY_THRESH)-(count1) ) ; i< ( DEPTH_READ-(count1) -count1); i++ ) begin
       pop();
+      compare_pop_data();
     end
 
     if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0110_0000) begin
@@ -294,6 +307,7 @@ integer count1=0;
 
    repeat(count1) begin
     pop();
+    compare_pop_data();
    end
 
     if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b1010_0000) begin
@@ -466,8 +480,7 @@ task push();
 
 endtask : push 
 
-
-task pop();
+task compare_pop_data();
 
 // R-9
 
@@ -641,17 +654,35 @@ task pop();
     end
 
   end 
+endtask
 
 
-    count_enteries_pop=count_enteries_pop+1;
+task pop();
+
+
     @(negedge RD_CLK);
     RD_EN = 1;
     @(negedge RD_CLK);
     // $display("i== %0d ; check RD_DATA %0h",i,RD_DATA);
     RD_EN=0;
 
+    count_enteries_pop=count_enteries_pop+1;
+
+
 endtask : pop
 
+
+
+
+// task pop_without_comparison();
+//     @(negedge RD_CLK);
+//     RD_EN = 1;
+//     @(negedge RD_CLK);
+//     // $display("i== %0d ; check RD_DATA %0h",i,RD_DATA);
+//     RD_EN=0;
+//     count_enteries_pop=count_enteries_pop+1;
+
+// endtask
 
   task test_status(input logic [31:0] error);
     begin
@@ -723,6 +754,10 @@ task compare(input reg [DATA_READ_WIDTH-1:0] RD_DATA, exp_dout);
   if(RD_DATA !== exp_dout) begin
     $display("RD_DATA mismatch. DUT_Out: %0h, Expected_Out: %0h, Time: %0t", RD_DATA, exp_dout,$time);
     error = error+1;
+        count_cmp = count_cmp+1;
+
+      $display("counting of byte compared including first word fall through, count is: %0d", count_cmp);
+
   end
   else if(debug) begin
     $display("RD_DATA match. DUT_Out: %0h, Expected_Out: %0h, Time: %0t", RD_DATA, exp_dout,$time);
@@ -753,7 +788,7 @@ module FIFO36K_tb();
   wire OVERFLOW; // FIFO overflow error flag
   wire UNDERFLOW;// FIFO underflow error flag
 
-  parameter DATA_WIDTH = 36; // FIFO data width (1-36)
+  parameter DATA_WIDTH = 18; // FIFO data width (1-36)
   parameter FIFO_TYPE = "SYNCHRONOUS"; // Synchronous or Asynchronous data transfer (SYNCHRONOUS/ASYNCHRONOUS)
   parameter [11:0] PROG_EMPTY_THRESH = 12'h004; // 12-bit Programmable empty depth
   parameter [11:0] PROG_FULL_THRESH = 12'h004;// 12-bit Programmable full depth
@@ -774,7 +809,7 @@ module FIFO36K_tb();
   integer wren_cnt=0;
   reg [DATA_WIDTH-1:0] local_queue [$];
   integer fifo_number;
-  bit debug=0;
+  bit debug=1;
 
   //clock//
   initial begin
@@ -834,12 +869,14 @@ end
   initial begin
     $dumpfile("wave.vcd");
     $dumpvars(0,FIFO36K_tb);
+    $dumpvars(0,FIFO36K_tb.i);
+
     for (int idx = 0; idx < DEPTH; idx = idx + 1)
     $dumpvars(0,FIFO36K_tb.fifo36k_inst.SYNCRONOUS.FIFO_RAM_inst.RAM_DATA[idx]);
   end
+    integer i;
 
   task check_flags();
-    integer i;
     // resetting ptrs
     $display("--------------------------------------------");
     $display("CHECK FLAGS: RESET PTRS---------------------");
@@ -930,7 +967,7 @@ end
     end
     for(i = DEPTH ; i>=1; i=i-1) begin
       pop();
-
+     
       if(PROG_EMPTY_THRESH>=i) begin
         if (~PROG_EMPTY)
           begin $display("Assertion PROG_EMPTY_pop_fifo_flags failed!"); error=error+1; end
@@ -1029,7 +1066,8 @@ end
   task pop();
     @(negedge WR_CLK);
     RD_EN = 1;
-    if(debug) $display(" RD_EN = ",RD_EN, " RD_DATA = ",RD_DATA);
+    @(posedge WR_CLK);
+
     if (UNDERFLOW)
       $display("FIFO is UNDERFLOW, POPing is UNDERFLOW");
     else if(EMPTY) begin
@@ -1038,10 +1076,11 @@ end
     end
     else begin
       exp_dout = local_queue.pop_front();
-      compare(RD_DATA, exp_dout);
     end
     @(negedge WR_CLK);
     RD_EN =0;
+    if(debug) $display(" RD_DATA:   %0h",RD_DATA, "   Time: %t",$time);
+
   endtask
   
   //task push(reg [32-1:0] in_din=$urandom_range(0, 2**32-1)); 
@@ -1049,7 +1088,7 @@ end
     @(negedge WR_CLK);
     WR_EN = 1; 
     WR_DATA = in_din;
-    if(debug) $display(" WR_EN = ",WR_EN, " WR_DATA = ",WR_DATA);
+    // if(debug) $display(" WR_EN = ",WR_EN, " WR_DATA = ",WR_DATA);
     if (OVERFLOW) begin
       $display("FIFO is OVERFLOW, PUSHing is OVERFLOW");
     end
@@ -1126,14 +1165,18 @@ end
         end
     end
 endtask
-
+integer count_cmp=0;
 task compare(input reg [DATA_WIDTH-1:0] RD_DATA, exp_dout);
   if(RD_DATA !== exp_dout) begin
-    $display("RD_DATA mismatch. DUT_Out: %0d, Expected_Out: %0d, Time: %0t", RD_DATA, exp_dout,$time);
+    $display("RD_DATA mismatch. DUT_Out: %0h, Expected_Out: %0h, Time: %0t", RD_DATA, exp_dout,$time);
+    $display("count compared : %0d", count_cmp);
     error = error+1;
   end
-  else if(debug)
-    $display("RD_DATA match. DUT_Out: %0d, Expected_Out: %0d, Time: %0t", RD_DATA, exp_dout,$time);
+  else if(debug) begin
+    $display("RD_DATA match. DUT_Out: %0h, Expected_Out: %0h, Time: %0t", RD_DATA, exp_dout,$time);
+        $display("count compared : %0d", count_cmp);
+  end
+    count_cmp= count_cmp+1;
 endtask
 
 endmodule
