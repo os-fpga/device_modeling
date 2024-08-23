@@ -392,6 +392,100 @@ module I_SERDES #(
 endmodule
 `endcelldefine
 //
+// LATCHNR black box model
+// Negative level-sensitive latch with active-high asyncronous reset
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module LATCHNR (
+  input logic D,
+  input logic G,
+  input logic R,
+  output logic Q
+);
+endmodule
+`endcelldefine
+//
+// LATCHNS black box model
+// Negative level-sensitive latch with active-high asyncronous set
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module LATCHNS (
+  input logic D,
+  input logic G,
+  input logic R,
+  output logic Q
+);
+endmodule
+`endcelldefine
+//
+// LATCHN black box model
+// Negative level-sensitive latch
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module LATCHN (
+  input logic D,
+  input logic G,
+  output logic Q
+);
+endmodule
+`endcelldefine
+//
+// LATCHR black box model
+// Positive level-sensitive latch with active-high asyncronous reset
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module LATCHR (
+  input logic D,
+  input logic G,
+  input logic R,
+  output logic Q
+);
+endmodule
+`endcelldefine
+//
+// LATCHS black box model
+// Positive level-sensitive latch with active-high asyncronous set
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module LATCHS (
+  input logic D,
+  input logic G,
+  input logic R,
+  output logic Q
+);
+endmodule
+`endcelldefine
+//
+// LATCH black box model
+// Positive level-sensitive latch
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module LATCH (
+  input logic D,
+  input logic G,
+  output logic Q
+);
+endmodule
+`endcelldefine
+//
 // LUT1 black box model
 // 1-input lookup table (LUT)
 //
