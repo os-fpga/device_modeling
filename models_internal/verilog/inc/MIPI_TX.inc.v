@@ -51,8 +51,8 @@ O_DELAY_inst (
     end
   end
 
-  assign TX_DP = (EN_ODLY=="FALSE")? tx_dp:o_delay_dout;
-  assign TX_DN = (EN_ODLY=="FALSE")? tx_dn:~o_delay_dout;
+  assign TX_DP = TX_ODT_EN?1'bz:(EN_ODLY=="FALSE")? tx_dp:o_delay_dout;
+  assign TX_DN = TX_ODT_EN?1'bz:(EN_ODLY=="FALSE")? tx_dn:~o_delay_dout;
   
   // assign TX_DP = tx_dp;
   // assign TX_DN = tx_dn;
@@ -62,3 +62,5 @@ O_DELAY_inst (
     if(LP_EN && HS_EN)
       $fatal(1,"\nERROR: MIPI TX instance %m LP_EN and HS_EN can't be hight at same time");
   end
+
+  
