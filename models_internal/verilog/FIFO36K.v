@@ -232,7 +232,7 @@ parameter W_PTR_WIDTH = $clog2(fifo_depth_write);
 parameter R_PTR_WIDTH = $clog2(fifo_depth_read);
 
 wire [W_PTR_WIDTH:0] b_wptr_sync, b_wptr_w;
-wire [R_PTR_WIDTH:0] b_rptr_sync, b_rptr_w;
+wire [R_PTR_WIDTH:0] b_rptr_sync, b_rptr_w, b_rptr_w1;
 
 
   TDP_RAM36K #(
@@ -254,7 +254,7 @@ wire [R_PTR_WIDTH:0] b_rptr_sync, b_rptr_w;
     // .ADDR_A({fifo_wr_addr, {15-fifo_addr_width{1'b0}}}), // Address port A, align MSBs and connect unused MSBs to logic 0
     .ADDR_A({b_wptr_w,{15-fifo_addr_width_w{1'b0}}}), // Address port A, align MSBs and connect unused MSBs to logic 0
     // .ADDR_B({fifo_rd_addr, {15-fifo_addr_width{1'b0}}}), // Address port B, align MSBs and connect unused MSBs to logic 0
-    .ADDR_B({b_rptr_w,{15-fifo_addr_width_r{1'b0}}}), // Address port B, align MSBs and connect unused MSBs to logic 0
+    .ADDR_B({b_rptr_w1,{15-fifo_addr_width_r{1'b0}}}), // Address port B, align MSBs and connect unused MSBs to logic 0
     .WDATA_A(ram_wr_data), // Write data port A
     .WPARITY_A(ram_wr_parity), // Write parity data port A
     .WDATA_B(32'h00000000), // Write data port B
@@ -358,18 +358,22 @@ assign b_rptr_sync = d_out2;
 
   assign diff_ptr0 =(DATA_WIDTH_WRITE>DATA_WIDTH_READ)? /* W>R */ ((((b_wptr_next/SCALING_FACTOR_WPTR  >= (b_rptr_sync/SCALING_FACTOR_RPTR))? (b_wptr_next/SCALING_FACTOR_WPTR-(b_rptr_sync/SCALING_FACTOR_RPTR)): (b_wptr_next/SCALING_FACTOR_WPTR+(1<<(W_PTR_WIDTH+1))-(b_rptr_sync/SCALING_FACTOR_RPTR)))))
 
-  : (  (DATA_WIDTH_READ>DATA_WIDTH_WRITE)? ( /* R>W */ ((((b_wptr_next/SCALING_FACTOR_WPTR  >= (b_rptr_sync/SCALING_FACTOR_RPTR))? (b_wptr_next/SCALING_FACTOR_WPTR-(b_rptr_sync/SCALING_FACTOR_RPTR)): (b_wptr_next/SCALING_FACTOR_WPTR+(1<<(R_PTR_WIDTH+1))-(b_rptr_sync/SCALING_FACTOR_RPTR))))) ) 
+  : (  (DATA_WIDTH_READ>DATA_WIDTH_WRITE)? ( /* R>W */ ((((b_wptr_next*SCALING_FACTOR_RPTR  >= (b_rptr_sync*SCALING_FACTOR_WPTR))? (b_wptr_next*SCALING_FACTOR_RPTR-(b_rptr_sync*SCALING_FACTOR_WPTR)): (b_wptr_next*SCALING_FACTOR_RPTR+(1<<(W_PTR_WIDTH+1))-(b_rptr_sync*SCALING_FACTOR_WPTR))))) ) 
 
   : /* R==W */ ((((b_wptr_next  >= (b_rptr_sync ))? (b_wptr_next - (b_rptr_sync)): (b_wptr_next + (1<<(W_PTR_WIDTH+1))-(b_rptr_sync ))))) );  
 
   // assign wfull = (DATA_WIDTH_WRITE>DATA_WIDTH_READ)? (diff_ptr0 == (1<<W_PTR_WIDTH)) : (diff_ptr0 == (1<<R_PTR_WIDTH) );
- 
-  assign wfull = (DATA_WIDTH_WRITE>DATA_WIDTH_READ)? (diff_ptr0 == (1<<W_PTR_WIDTH)) : (diff_ptr0 == (1<<R_PTR_WIDTH)   );
+
+  assign wfull = (DATA_WIDTH_WRITE>DATA_WIDTH_READ)? (diff_ptr0 == (1<<R_PTR_WIDTH)) : (diff_ptr0 == (1<<W_PTR_WIDTH)   );
 
 
-  assign al_full = (DATA_WIDTH_WRITE>DATA_WIDTH_READ)? (diff_ptr0 == (1<<W_PTR_WIDTH)-1): (diff_ptr0 == ((1<<R_PTR_WIDTH)-1) );
+  assign al_full = (DATA_WIDTH_WRITE>DATA_WIDTH_READ)? (diff_ptr0 == (1<<R_PTR_WIDTH)-1): (diff_ptr0 == ((1<<W_PTR_WIDTH)-1) );
 
-  assign p_full = (DATA_WIDTH_WRITE>DATA_WIDTH_READ)? (diff_ptr0 >= ((1<<W_PTR_WIDTH)-PROG_FULL_THRESH) ) :  ( (diff_ptr0 >= ((1<<R_PTR_WIDTH)-PROG_FULL_THRESH) ) );
+  assign p_full = (DATA_WIDTH_WRITE>DATA_WIDTH_READ)? (diff_ptr0 >= ((1<<R_PTR_WIDTH)-PROG_FULL_THRESH) ) :  ( (diff_ptr0 >= ((1<<W_PTR_WIDTH)-PROG_FULL_THRESH) ) );
+
+
+  // assign diff_ptr2 = ((((b_wptr_next*SCALING_FACTOR_WPTR-(b_rptr_sync/SCALING_FACTOR_RPTR)): (b_wptr_next/SCALING_FACTOR_WPTR+(1<<(W_PTR_WIDTH+1))-(b_rptr_sync/SCALING_FACTOR_RPTR)))))
+
 
 
   always@(posedge WR_CLK or posedge RESET) begin
@@ -389,9 +393,159 @@ assign b_rptr_sync = d_out2;
     end
     else begin
 
-      FULL <= wfull ;
-      ALMOST_FULL <= al_full ; 
-      PROG_FULL <= p_full  ;
+
+FULL <= wfull;
+ALMOST_FULL <= al_full;
+PROG_FULL <= p_full;
+
+//             if((DATA_WIDTH_WRITE==9 && DATA_WIDTH_READ ==36) ) begin
+            
+//                 // Al full
+
+//                   // if( al_full==1 & ( (b_wptr_next >= 4092 & b_wptr_next <=4094) || (b_wptr_next >= 8188 & b_wptr_next <=8190) ) ) begin
+//                   //    ALMOST_FULL <= !al_full ;       
+//                   // end
+//                   // else begin
+//                   //   ALMOST_FULL <= al_full;
+//                   // end
+                
+//                 if(  (b_wptr_next> b_rptr_next*4)? (b_wptr_next - b_rptr_next*4 == 4095): (b_rptr_next*4 - b_wptr_next == 4095) ) begin
+//                     ALMOST_FULL <= 1;
+//                 end
+//                 else if (  (b_wptr_next> b_rptr_next*4)? (b_wptr_next - b_rptr_next*4 == 4096) : (b_rptr_next*4 - b_wptr_next  == 4096) ) begin
+//                     ALMOST_FULL <=0;
+//                 end
+
+//                 // pro full
+
+//                 // if( p_full==1 & (b_wptr_next >= 4096-(4*PROG_FULL_THRESH) & b_wptr_next <=4096-PROG_FULL_THRESH-1) || (b_wptr_next >= 8192-(4*PROG_FULL_THRESH) & b_wptr_next <=8192-PROG_FULL_THRESH-1) ) 
+//                 //    begin
+//                 //      PROG_FULL <= !p_full ;       
+//                 //   end
+//                 //   else begin
+//                 //     PROG_FULL <= p_full;
+//                 //   end
+//                    PROG_FULL <= p_full;
+
+//                    FULL        <= wfull ;
+                  
+//           end
+
+
+//          else if((DATA_WIDTH_WRITE==18 && DATA_WIDTH_READ ==36) ) begin
+            
+//                   // Al full
+
+//                     // if( al_full==1 & ( (b_wptr_next >= 2045 & b_wptr_next <=2046) || b_wptr_next >= 4093 & b_wptr_next <=4094 ) ) begin
+//                     //    ALMOST_FULL <= !al_full ;       
+//                     // end
+//                     // else begin
+//                     //   ALMOST_FULL <= al_full;
+//                     // end
+
+//                 if( (b_wptr_next> (b_rptr_next*2))? (b_wptr_next - b_rptr_next*2 == 2047) : (b_rptr_next*2 - b_wptr_next == 2047) ) begin
+//                     ALMOST_FULL <= 1;
+//                   end
+//                 else if (  (b_wptr_next> b_rptr_next*4)? (b_wptr_next - b_rptr_next*2 == 2048) : (b_rptr_next*2 - b_wptr_next  == 2048) ) begin
+//                     ALMOST_FULL <=0;
+//                 end
+                    
+                  
+//                   // pro full
+
+//                   if( p_full==1 & ( (b_wptr_next >= 2048-(2*PROG_FULL_THRESH) & b_wptr_next <=2048-PROG_FULL_THRESH-1) ||  (b_wptr_next >= 4096-(2*PROG_FULL_THRESH) & b_wptr_next <=4096-PROG_FULL_THRESH-1) ) ) 
+//                      begin
+//                        PROG_FULL <= !p_full ;       
+//                     end
+//                     else begin
+//                       PROG_FULL <= p_full;
+//                     end
+                  
+//                   // Full  
+//                      FULL        <= wfull ;
+//           end
+// ///
+
+//           else if((DATA_WIDTH_WRITE==9 && DATA_WIDTH_READ ==18) ) begin
+            
+//                   // Al full
+
+//                     // if( al_full==1 & ( (b_wptr_next == 4094 ) ||  b_wptr_next ==8190 ) ) begin
+//                     //    ALMOST_FULL <= !al_full ;       
+//                     // end
+//                     // else begin
+//                     //   ALMOST_FULL <= al_full;
+//                     // end
+                    
+//                   if(  (b_wptr_next> b_rptr_next*2)? (b_wptr_next - b_rptr_next*2 == 4095): (b_rptr_next*2 - b_wptr_next == 4095) ) begin
+//                       ALMOST_FULL <= 1;
+//                   end
+//                   else if (  (b_wptr_next> b_rptr_next*2)? (b_wptr_next - b_rptr_next*2 == 4096) : (b_rptr_next*2 - b_wptr_next  == 4096) ) begin
+//                       ALMOST_FULL <=0;
+//                   end                
+                  
+//                   // pro full
+
+//                   if( p_full==1 & ( (b_wptr_next >= 4096-(2*PROG_FULL_THRESH) & b_wptr_next <=4096-PROG_FULL_THRESH-1) ||  (b_wptr_next >= 8192-(2*PROG_FULL_THRESH) & b_wptr_next <=8192-PROG_FULL_THRESH-1) ) ) 
+//                      begin
+//                        PROG_FULL <= !p_full ;       
+//                     end
+//                     else begin
+//                       PROG_FULL <= p_full;
+//                     end
+                  
+//                   // Full  
+//                      FULL        <= wfull ;
+//           end
+
+//           else if((DATA_WIDTH_WRITE==9 && DATA_WIDTH_READ ==9) ) begin
+
+//                       ALMOST_FULL <= al_full ;
+
+//           end
+//           else if((DATA_WIDTH_WRITE==18 && DATA_WIDTH_READ ==18) ) begin
+
+//                       ALMOST_FULL <= al_full ;
+
+//           end
+//           else if((DATA_WIDTH_WRITE==36 && DATA_WIDTH_READ ==36) ) begin
+
+//                       ALMOST_FULL <= al_full ;
+
+//           end
+
+//           else if((DATA_WIDTH_WRITE==36 && DATA_WIDTH_READ ==9) ) begin
+
+//                 ALMOST_FULL <= al_full;
+//                 // if(  (b_wptr_sync*4> b_rptr_next)? (b_wptr_next*4+3 - b_rptr_next/4 == 4095): (b_rptr_next - b_wptr_next*4 == 4095) ) begin
+//                 //     ALMOST_FULL <= 1;
+//                 // end
+//                 // else if (  (b_wptr_next*4> b_rptr_next)? (b_wptr_next*4 - b_rptr_next == 4096) : (b_rptr_next - b_wptr_next*4  == 4096) ) begin
+//                 //     ALMOST_FULL <=0;
+//                 // end
+
+//           end
+
+//           else if((DATA_WIDTH_WRITE==36 && DATA_WIDTH_READ ==18) ) begin
+          
+//                 ALMOST_FULL <= al_full;
+
+
+//           end
+          
+//           else if((DATA_WIDTH_WRITE==18 && DATA_WIDTH_READ ==9) ) begin
+
+//                 ALMOST_FULL <= al_full;
+
+//           end
+
+
+//           // else begin
+
+//           //   ALMOST_FULL <= al_full ; 
+
+//           // end
+
     end
   end
 
@@ -420,9 +574,11 @@ always @(*) begin
     end
 end
 
-assign b_rptr_w = b_rptr_next;
+assign b_rptr_w = b_rptr;
 
-assign diff_ptr1 = (DATA_WIDTH_WRITE > DATA_WIDTH_READ)?   ( ((b_wptr_sync/SCALING_FACTOR_WPTR) >= (b_rptr_next/SCALING_FACTOR_RPTR))? (b_wptr_sync/SCALING_FACTOR_WPTR-(b_rptr_next/SCALING_FACTOR_RPTR)): (b_wptr_sync/SCALING_FACTOR_WPTR+(1<<(W_PTR_WIDTH+1))-(b_rptr_next/SCALING_FACTOR_RPTR)))
+assign b_rptr_w1= b_rptr_next;
+
+assign diff_ptr1 = (DATA_WIDTH_WRITE > DATA_WIDTH_READ)?   ( ((b_wptr_sync*SCALING_FACTOR_RPTR) >= (b_rptr_next*SCALING_FACTOR_WPTR))? (b_wptr_sync*SCALING_FACTOR_RPTR-(b_rptr_next*SCALING_FACTOR_WPTR)): ((b_wptr_sync*SCALING_FACTOR_RPTR)+(1<<(R_PTR_WIDTH+1))-(b_rptr_next*SCALING_FACTOR_RPTR)/SCALING_FACTOR_RPTR))
  
  : ( (DATA_WIDTH_READ > DATA_WIDTH_WRITE)?  (((b_wptr_sync/SCALING_FACTOR_WPTR) >= (b_rptr_next/SCALING_FACTOR_RPTR))? (b_wptr_sync/SCALING_FACTOR_WPTR-(b_rptr_next/SCALING_FACTOR_RPTR)): (b_wptr_sync/SCALING_FACTOR_WPTR+(1<<(R_PTR_WIDTH+1))-(b_rptr_next/SCALING_FACTOR_RPTR)))  
  
