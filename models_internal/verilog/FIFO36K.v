@@ -231,8 +231,8 @@ assign ram_clk_b = RD_CLK;
 parameter W_PTR_WIDTH = $clog2(fifo_depth_write);
 parameter R_PTR_WIDTH = $clog2(fifo_depth_read);
 
-wire [W_PTR_WIDTH:0] b_wptr_sync, b_wptr_w;
-wire [R_PTR_WIDTH:0] b_rptr_sync, b_rptr_w, b_rptr_w1;
+wire [W_PTR_WIDTH:0] b_wptr_sync, b_wptr_w, b_wptr_sync_for_a;
+wire [R_PTR_WIDTH:0] b_rptr_sync, b_rptr_w, b_rptr_w1, b_rptr_sync_for_a;
 
 
   TDP_RAM36K #(
@@ -243,10 +243,10 @@ wire [R_PTR_WIDTH:0] b_rptr_sync, b_rptr_w, b_rptr_w1;
     .WRITE_WIDTH_B(DATA_WIDTH_WRITE), // Write data width on port B (1-36)
     .READ_WIDTH_B(DATA_WIDTH_READ) // Read data width on port B (1-36)
   ) FIFO_RAM_inst (
-    .WEN_A(WR_EN & !OVERFLOW & !FULL), // Write-enable port A
+    .WEN_A(WR_EN ), // Write-enable port A
     .WEN_B(1'b0), // Write-enable port B
     .REN_A(1'b0), // Read-enable port A
-    .REN_B(RD_EN & !UNDERFLOW & !EMPTY), // Read-enable port B
+    .REN_B(RD_EN ), // Read-enable port B
     .CLK_A(WR_CLK), // Clock port A
     .CLK_B(ram_clk_b), // Clock port B 
     .BE_A(4'hf), // Byte-write enable port A
@@ -302,18 +302,21 @@ wire [R_PTR_WIDTH:0] b_rptr_sync, b_rptr_w, b_rptr_w1;
 /*---------Write pointer synchronizer ( 2 FLOPS) logic--------------*/
 
 
-  reg [W_PTR_WIDTH:0] q1,d_out1;
+  reg [W_PTR_WIDTH:0] q1,q1_a,d_out1;
 
   assign b_wptr_sync = d_out1;
+  assign b_wptr_sync_for_a = q1_a;
 
   always@(posedge RD_CLK) begin
     if(RESET) begin
       q1 <= 0;
       d_out1 <= 0;
+      q1_a <=0;
     end
     else begin
       q1 <= b_wptr_w;
       d_out1 <= q1;
+      q1_a <= d_out1;
     end
   end
 
@@ -321,18 +324,22 @@ wire [R_PTR_WIDTH:0] b_rptr_sync, b_rptr_w, b_rptr_w1;
 
 /*--------- Read pointer synchronizer (2 FLOPS ) logic --------------*/
 
-reg [R_PTR_WIDTH:0] q2, d_out2;
+reg [R_PTR_WIDTH:0] q2, q2_a, d_out2;
 
 assign b_rptr_sync = d_out2;
+assign b_rptr_sync_for_a = q2_a;
 
   always@(posedge WR_CLK) begin
     if(RESET) begin
       q2 <= 0;
       d_out2 <= 0;
+      q2_a <=0;
     end
     else begin
+
       q2 <= b_rptr_w;
       d_out2 <= q2;
+      q2_a <= d_out2;
     end
   end
 
@@ -349,7 +356,7 @@ assign b_rptr_sync = d_out2;
 
   wire wfull, al_full, p_full; 
 
-  wire [W_PTR_WIDTH:0] diff_ptr0, diff_ptr2;
+  wire [W_PTR_WIDTH:0] diff_ptr0, diff_ptr2, diff_ptr0_for_a;
 
   assign b_wptr_next = b_wptr+(WR_EN & !FULL);
 
@@ -362,14 +369,22 @@ assign b_rptr_sync = d_out2;
 
   : /* R==W */ ((((b_wptr_next  >= (b_rptr_sync ))? (b_wptr_next - (b_rptr_sync)): (b_wptr_next + (1<<(W_PTR_WIDTH+1))-(b_rptr_sync ))))) );  
 
+
+  assign diff_ptr0_for_a =(DATA_WIDTH_WRITE>DATA_WIDTH_READ)? /* W>R */ ((((b_wptr_next/SCALING_FACTOR_WPTR  >= (b_rptr_sync_for_a/SCALING_FACTOR_RPTR))? (b_wptr_next/SCALING_FACTOR_WPTR-(b_rptr_sync_for_a/SCALING_FACTOR_RPTR)): (b_wptr_next/SCALING_FACTOR_WPTR+(1<<(W_PTR_WIDTH+1))-(b_rptr_sync_for_a/SCALING_FACTOR_RPTR)))))
+
+  : (  (DATA_WIDTH_READ>DATA_WIDTH_WRITE)? ( /* R>W */ ((((b_wptr_next*SCALING_FACTOR_RPTR  >= (b_rptr_sync_for_a*SCALING_FACTOR_WPTR))? (b_wptr_next*SCALING_FACTOR_RPTR-(b_rptr_sync_for_a*SCALING_FACTOR_WPTR)): (b_wptr_next*SCALING_FACTOR_RPTR+(1<<(W_PTR_WIDTH+1))-(b_rptr_sync_for_a*SCALING_FACTOR_WPTR))))) ) 
+
+  : /* R==W */ ((((b_wptr_next  >= (b_rptr_sync_for_a ))? (b_wptr_next - (b_rptr_sync_for_a)): (b_wptr_next + (1<<(W_PTR_WIDTH+1))-(b_rptr_sync_for_a ))))) );  
+
+
   // assign wfull = (DATA_WIDTH_WRITE>DATA_WIDTH_READ)? (diff_ptr0 == (1<<W_PTR_WIDTH)) : (diff_ptr0 == (1<<R_PTR_WIDTH) );
 
-  assign wfull = (DATA_WIDTH_WRITE>DATA_WIDTH_READ)? (diff_ptr0 == (1<<R_PTR_WIDTH)) : (diff_ptr0 == (1<<W_PTR_WIDTH)   );
+  assign wfull = (DATA_WIDTH_WRITE>DATA_WIDTH_READ)? (diff_ptr0 == (1<<W_PTR_WIDTH)) : (diff_ptr0 == (1<<W_PTR_WIDTH)   );
 
 
-  assign al_full = (DATA_WIDTH_WRITE>DATA_WIDTH_READ)? (diff_ptr0 == (1<<R_PTR_WIDTH)-1): (diff_ptr0 == ((1<<W_PTR_WIDTH)-1) );
+  assign al_full = (DATA_WIDTH_WRITE>DATA_WIDTH_READ)? (diff_ptr0 == (1<<W_PTR_WIDTH)-1): (diff_ptr0 == ((1<<W_PTR_WIDTH)-1) );
 
-  assign p_full = (DATA_WIDTH_WRITE>DATA_WIDTH_READ)? (diff_ptr0 >= ((1<<R_PTR_WIDTH)-PROG_FULL_THRESH) ) :  ( (diff_ptr0 >= ((1<<W_PTR_WIDTH)-PROG_FULL_THRESH) ) );
+  assign p_full = (DATA_WIDTH_WRITE>DATA_WIDTH_READ)? (diff_ptr0_for_a >= ((1<<W_PTR_WIDTH)-PROG_FULL_THRESH+1) ) :  ( (diff_ptr0_for_a >= ((1<<W_PTR_WIDTH)-PROG_FULL_THRESH+1) ) );
 
 
   // assign diff_ptr2 = ((((b_wptr_next*SCALING_FACTOR_WPTR-(b_rptr_sync/SCALING_FACTOR_RPTR)): (b_wptr_next/SCALING_FACTOR_WPTR+(1<<(W_PTR_WIDTH+1))-(b_rptr_sync/SCALING_FACTOR_RPTR)))))
@@ -386,165 +401,18 @@ assign b_rptr_sync = d_out2;
   end
   
   always@(posedge WR_CLK or posedge RESET) begin
+
     if(RESET) begin
       FULL <= 0;
       ALMOST_FULL <= 'b0;
       PROG_FULL <= 0;
     end
+
     else begin
 
-
-FULL <= wfull;
-ALMOST_FULL <= al_full;
-PROG_FULL <= p_full;
-
-//             if((DATA_WIDTH_WRITE==9 && DATA_WIDTH_READ ==36) ) begin
-            
-//                 // Al full
-
-//                   // if( al_full==1 & ( (b_wptr_next >= 4092 & b_wptr_next <=4094) || (b_wptr_next >= 8188 & b_wptr_next <=8190) ) ) begin
-//                   //    ALMOST_FULL <= !al_full ;       
-//                   // end
-//                   // else begin
-//                   //   ALMOST_FULL <= al_full;
-//                   // end
-                
-//                 if(  (b_wptr_next> b_rptr_next*4)? (b_wptr_next - b_rptr_next*4 == 4095): (b_rptr_next*4 - b_wptr_next == 4095) ) begin
-//                     ALMOST_FULL <= 1;
-//                 end
-//                 else if (  (b_wptr_next> b_rptr_next*4)? (b_wptr_next - b_rptr_next*4 == 4096) : (b_rptr_next*4 - b_wptr_next  == 4096) ) begin
-//                     ALMOST_FULL <=0;
-//                 end
-
-//                 // pro full
-
-//                 // if( p_full==1 & (b_wptr_next >= 4096-(4*PROG_FULL_THRESH) & b_wptr_next <=4096-PROG_FULL_THRESH-1) || (b_wptr_next >= 8192-(4*PROG_FULL_THRESH) & b_wptr_next <=8192-PROG_FULL_THRESH-1) ) 
-//                 //    begin
-//                 //      PROG_FULL <= !p_full ;       
-//                 //   end
-//                 //   else begin
-//                 //     PROG_FULL <= p_full;
-//                 //   end
-//                    PROG_FULL <= p_full;
-
-//                    FULL        <= wfull ;
-                  
-//           end
-
-
-//          else if((DATA_WIDTH_WRITE==18 && DATA_WIDTH_READ ==36) ) begin
-            
-//                   // Al full
-
-//                     // if( al_full==1 & ( (b_wptr_next >= 2045 & b_wptr_next <=2046) || b_wptr_next >= 4093 & b_wptr_next <=4094 ) ) begin
-//                     //    ALMOST_FULL <= !al_full ;       
-//                     // end
-//                     // else begin
-//                     //   ALMOST_FULL <= al_full;
-//                     // end
-
-//                 if( (b_wptr_next> (b_rptr_next*2))? (b_wptr_next - b_rptr_next*2 == 2047) : (b_rptr_next*2 - b_wptr_next == 2047) ) begin
-//                     ALMOST_FULL <= 1;
-//                   end
-//                 else if (  (b_wptr_next> b_rptr_next*4)? (b_wptr_next - b_rptr_next*2 == 2048) : (b_rptr_next*2 - b_wptr_next  == 2048) ) begin
-//                     ALMOST_FULL <=0;
-//                 end
-                    
-                  
-//                   // pro full
-
-//                   if( p_full==1 & ( (b_wptr_next >= 2048-(2*PROG_FULL_THRESH) & b_wptr_next <=2048-PROG_FULL_THRESH-1) ||  (b_wptr_next >= 4096-(2*PROG_FULL_THRESH) & b_wptr_next <=4096-PROG_FULL_THRESH-1) ) ) 
-//                      begin
-//                        PROG_FULL <= !p_full ;       
-//                     end
-//                     else begin
-//                       PROG_FULL <= p_full;
-//                     end
-                  
-//                   // Full  
-//                      FULL        <= wfull ;
-//           end
-// ///
-
-//           else if((DATA_WIDTH_WRITE==9 && DATA_WIDTH_READ ==18) ) begin
-            
-//                   // Al full
-
-//                     // if( al_full==1 & ( (b_wptr_next == 4094 ) ||  b_wptr_next ==8190 ) ) begin
-//                     //    ALMOST_FULL <= !al_full ;       
-//                     // end
-//                     // else begin
-//                     //   ALMOST_FULL <= al_full;
-//                     // end
-                    
-//                   if(  (b_wptr_next> b_rptr_next*2)? (b_wptr_next - b_rptr_next*2 == 4095): (b_rptr_next*2 - b_wptr_next == 4095) ) begin
-//                       ALMOST_FULL <= 1;
-//                   end
-//                   else if (  (b_wptr_next> b_rptr_next*2)? (b_wptr_next - b_rptr_next*2 == 4096) : (b_rptr_next*2 - b_wptr_next  == 4096) ) begin
-//                       ALMOST_FULL <=0;
-//                   end                
-                  
-//                   // pro full
-
-//                   if( p_full==1 & ( (b_wptr_next >= 4096-(2*PROG_FULL_THRESH) & b_wptr_next <=4096-PROG_FULL_THRESH-1) ||  (b_wptr_next >= 8192-(2*PROG_FULL_THRESH) & b_wptr_next <=8192-PROG_FULL_THRESH-1) ) ) 
-//                      begin
-//                        PROG_FULL <= !p_full ;       
-//                     end
-//                     else begin
-//                       PROG_FULL <= p_full;
-//                     end
-                  
-//                   // Full  
-//                      FULL        <= wfull ;
-//           end
-
-//           else if((DATA_WIDTH_WRITE==9 && DATA_WIDTH_READ ==9) ) begin
-
-//                       ALMOST_FULL <= al_full ;
-
-//           end
-//           else if((DATA_WIDTH_WRITE==18 && DATA_WIDTH_READ ==18) ) begin
-
-//                       ALMOST_FULL <= al_full ;
-
-//           end
-//           else if((DATA_WIDTH_WRITE==36 && DATA_WIDTH_READ ==36) ) begin
-
-//                       ALMOST_FULL <= al_full ;
-
-//           end
-
-//           else if((DATA_WIDTH_WRITE==36 && DATA_WIDTH_READ ==9) ) begin
-
-//                 ALMOST_FULL <= al_full;
-//                 // if(  (b_wptr_sync*4> b_rptr_next)? (b_wptr_next*4+3 - b_rptr_next/4 == 4095): (b_rptr_next - b_wptr_next*4 == 4095) ) begin
-//                 //     ALMOST_FULL <= 1;
-//                 // end
-//                 // else if (  (b_wptr_next*4> b_rptr_next)? (b_wptr_next*4 - b_rptr_next == 4096) : (b_rptr_next - b_wptr_next*4  == 4096) ) begin
-//                 //     ALMOST_FULL <=0;
-//                 // end
-
-//           end
-
-//           else if((DATA_WIDTH_WRITE==36 && DATA_WIDTH_READ ==18) ) begin
-          
-//                 ALMOST_FULL <= al_full;
-
-
-//           end
-          
-//           else if((DATA_WIDTH_WRITE==18 && DATA_WIDTH_READ ==9) ) begin
-
-//                 ALMOST_FULL <= al_full;
-
-//           end
-
-
-//           // else begin
-
-//           //   ALMOST_FULL <= al_full ; 
-
-//           // end
+      FULL <= wfull;
+      ALMOST_FULL <= al_full;
+      PROG_FULL <= p_full;
 
     end
   end
@@ -555,7 +423,7 @@ PROG_FULL <= p_full;
 
 localparam SCALING_FACTOR_RPTR= (DATA_WIDTH_READ<DATA_WIDTH_WRITE)? (DATA_WIDTH_WRITE/DATA_WIDTH_READ):1;
 
-wire [R_PTR_WIDTH:0] diff_ptr1;
+wire [R_PTR_WIDTH:0] diff_ptr1, diff_ptr1_for_a;
 reg [R_PTR_WIDTH:0] b_rptr_next, b_rptr;
 
 
@@ -563,6 +431,7 @@ always @(*) begin
 
     if(RESET) begin
       b_rptr_next =0;
+      b_rptr <=0;
     end
     if((RD_EN & !EMPTY)) begin
       if (b_rptr_next==(1<<R_PTR_WIDTH+1)) begin  
@@ -584,12 +453,18 @@ assign diff_ptr1 = (DATA_WIDTH_WRITE > DATA_WIDTH_READ)?   ( ((b_wptr_sync*SCALI
  
  : (((b_wptr_sync) >= (b_rptr_next))? (b_wptr_sync-(b_rptr_next)): (b_wptr_sync+(1<<(W_PTR_WIDTH+1))-(b_rptr_next))) )   ;
 
+assign diff_ptr1_for_a = (DATA_WIDTH_WRITE > DATA_WIDTH_READ)?   ( ((b_wptr_sync_for_a*SCALING_FACTOR_RPTR) >= (b_rptr_next*SCALING_FACTOR_WPTR))? (b_wptr_sync_for_a*SCALING_FACTOR_RPTR-(b_rptr_next*SCALING_FACTOR_WPTR)): ((b_wptr_sync_for_a*SCALING_FACTOR_RPTR)+(1<<(R_PTR_WIDTH+1))-(b_rptr_next*SCALING_FACTOR_RPTR)/SCALING_FACTOR_RPTR))
+ 
+ : ( (DATA_WIDTH_READ > DATA_WIDTH_WRITE)?  (((b_wptr_sync_for_a/SCALING_FACTOR_WPTR) >= (b_rptr_next/SCALING_FACTOR_RPTR))? (b_wptr_sync_for_a/SCALING_FACTOR_WPTR-(b_rptr_next/SCALING_FACTOR_RPTR)): (b_wptr_sync_for_a/SCALING_FACTOR_WPTR+(1<<(R_PTR_WIDTH+1))-(b_rptr_next/SCALING_FACTOR_RPTR)))  
+ 
+ : (((b_wptr_sync_for_a) >= (b_rptr_next))? (b_wptr_sync_for_a-(b_rptr_next)): (b_wptr_sync_for_a+(1<<(W_PTR_WIDTH+1))-(b_rptr_next))) )   ;
+
 
 assign rempty= (diff_ptr1==0)?1:0;
 
 assign al_empty = (diff_ptr1 ==1)? 1:0;
 
-assign p_empty = (diff_ptr1 ==PROG_EMPTY_THRESH || diff_ptr1 <=PROG_EMPTY_THRESH )? 1:0;
+assign p_empty = (diff_ptr1_for_a ==PROG_EMPTY_THRESH-1 || diff_ptr1_for_a <=PROG_EMPTY_THRESH-1 )? 1:0;
 
 
   always@(posedge RD_CLK or posedge RESET) begin
@@ -614,7 +489,19 @@ assign p_empty = (diff_ptr1 ==PROG_EMPTY_THRESH || diff_ptr1 <=PROG_EMPTY_THRESH
 
         
       EMPTY <= rempty;
-      ALMOST_EMPTY <= al_empty;
+      
+      if(DATA_WIDTH_READ==9) begin
+        if(b_rptr==4095 & WR_EN==0) begin
+          ALMOST_EMPTY <=0;
+        end
+        else begin
+          ALMOST_EMPTY <= al_empty;
+        end
+      end
+      else begin
+        ALMOST_EMPTY <= al_empty;      
+      end
+
       PROG_EMPTY <= p_empty;    
       
     end 
@@ -772,7 +659,26 @@ assign p_empty = (diff_ptr1 ==PROG_EMPTY_THRESH || diff_ptr1 <=PROG_EMPTY_THRESH
       end
     end
 
-end : ASYNCRONOUS
+
+always @(*) begin    
+    if (OVERFLOW) begin
+        @(posedge WR_CLK) begin
+        $fatal(1,"\n Error: OVERFLOW Happend, RESET THE FIFO FIRST \n", OVERFLOW );             
+        end 
+     end
+end
+
+always @(*) begin    
+    if (UNDERFLOW) begin
+        @(posedge RD_CLK) begin
+        $fatal(1,"\n Error: UNDERFLOW Happend, RESET THE FIFO FIRST \n", UNDERFLOW );             
+        end 
+     end
+end
+
+end : ASYNCRONOUS 
+
+
  initial begin
     case(DATA_WRITE_WIDTH)
       9 ,
@@ -797,8 +703,8 @@ end : ASYNCRONOUS
         $fatal(1,"\nError: FIFO36K instance %m has parameter FIFO_TYPE set to %s.  Valid values are SYNCHRONOUS, ASYNCHRONOUS\n", FIFO_TYPE);
       end
     endcase
-
   end
 
 endmodule
+
 `endcelldefine
