@@ -99,6 +99,21 @@ module DLY_SEL_DCODER (
 endmodule
 `endcelldefine
 //
+// DLY_VALUE_MUX black box model
+// Multiplexer
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module DLY_VALUE_MUX (
+  input logic [5:0] DLY_TAP_VAL_ARRAY[19:0],
+  input logic [4:0] DLY_ADDR,
+  output logic [5:0] DLY_TAP_VALUE
+);
+endmodule
+`endcelldefine
+//
 // DSP19X2 black box model
 // Paramatizable dual 10x9-bit multiplier accumulator
 //
