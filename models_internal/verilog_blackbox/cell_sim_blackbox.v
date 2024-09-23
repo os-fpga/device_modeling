@@ -82,6 +82,38 @@ module DFFRE (
 endmodule
 `endcelldefine
 //
+// DLY_SEL_DCODER black box model
+// Address Decoder
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module DLY_SEL_DCODER (
+  input logic DLY_LOAD,
+  input logic DLY_ADJ,
+  input logic DLY_INCDEC,
+  input logic [4:0] DLY_ADDR,
+  output reg [2:0] DLY_CNTRL[31:0]
+);
+endmodule
+`endcelldefine
+//
+// DLY_VALUE_MUX black box model
+// Multiplexer
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module DLY_VALUE_MUX (
+  input logic [5:0] DLY_TAP_VAL_ARRAY[19:0],
+  input logic [4:0] DLY_ADDR,
+  output logic [5:0] DLY_TAP_VALUE
+);
+endmodule
+`endcelldefine
+//
 // DSP19X2 black box model
 // Paramatizable dual 10x9-bit multiplier accumulator
 //
@@ -392,6 +424,100 @@ module I_SERDES #(
 endmodule
 `endcelldefine
 //
+// LATCHNR black box model
+// Negative level-sensitive latch with active-high asyncronous reset
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module LATCHNR (
+  input logic D,
+  input logic G,
+  input logic R,
+  output logic Q
+);
+endmodule
+`endcelldefine
+//
+// LATCHNS black box model
+// Negative level-sensitive latch with active-high asyncronous set
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module LATCHNS (
+  input logic D,
+  input logic G,
+  input logic R,
+  output logic Q
+);
+endmodule
+`endcelldefine
+//
+// LATCHN black box model
+// Negative level-sensitive latch
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module LATCHN (
+  input logic D,
+  input logic G,
+  output logic Q
+);
+endmodule
+`endcelldefine
+//
+// LATCHR black box model
+// Positive level-sensitive latch with active-high asyncronous reset
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module LATCHR (
+  input logic D,
+  input logic G,
+  input logic R,
+  output logic Q
+);
+endmodule
+`endcelldefine
+//
+// LATCHS black box model
+// Positive level-sensitive latch with active-high asyncronous set
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module LATCHS (
+  input logic D,
+  input logic G,
+  input logic R,
+  output logic Q
+);
+endmodule
+`endcelldefine
+//
+// LATCH black box model
+// Positive level-sensitive latch
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module LATCH (
+  input logic D,
+  input logic G,
+  output logic Q
+);
+endmodule
+`endcelldefine
+//
 // LUT1 black box model
 // 1-input lookup table (LUT)
 //
@@ -484,6 +610,79 @@ module LUT6 #(
   ) (
   input logic [5:0] A,
   output logic Y
+);
+endmodule
+`endcelldefine
+//
+// MIPI_RX black box model
+// MIPI Receiver
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module MIPI_RX #(
+  parameter WIDTH = 4, // Width of input data to serializer (3-10)
+  parameter EN_IDLY = "FALSE", // True or False
+  parameter DELAY = 0 // Fixed TAP delay value (0-63)
+  ) (
+  input logic RST,
+  input logic RX_CLK,
+  input logic PLL_LOCK,
+  (* clkbuf_sink *)
+  input logic CLK_IN,
+  input logic RX_DP,
+  input logic RX_DN,
+  input logic HS_EN,
+  input logic LP_EN,
+  input logic RX_TERM_EN,
+  input logic BITSLIP_ADJ,
+  input logic DLY_LOAD,
+  input logic DLY_ADJ,
+  input logic DLY_INCDEC,
+  output logic [5:0] DLY_TAP_VALUE,
+  output logic [WIDTH-1:0] HS_RX_DATA,
+  output logic HS_RXD_VALID,
+  output logic RX_OE,
+  output logic LP_RX_DP,
+  output logic LP_RX_DN
+);
+endmodule
+`endcelldefine
+//
+// MIPI_TX black box model
+// MIPI Transmitter
+//
+// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
+//
+`celldefine
+(* blackbox *)
+module MIPI_TX #(
+  parameter WIDTH = 4, // Width of input data to serializer (3-10)
+  parameter EN_ODLY = "FALSE", // True or False
+  parameter LANE_MODE = "Master", // Master or Slave
+  parameter DELAY = 0 // Fixed TAP delay value (0-63)
+  ) (
+  input logic RST,
+  input logic RX_CLK,
+  input logic PLL_LOCK,
+  (* clkbuf_sink *)
+  input logic CLK_IN,
+  input logic [WIDTH-1:0] HS_TX_DATA,
+  input logic HS_TXD_VALID,
+  input logic HS_EN,
+  input logic TX_LP_DP,
+  input logic TX_LP_DN,
+  input logic LP_EN,
+  input logic TX_ODT_EN,
+  input logic DLY_LOAD,
+  input logic DLY_ADJ,
+  input logic DLY_INCDEC,
+  output logic TX_OE,
+  output logic TX_DP,
+  output logic TX_DN,
+  input logic CHANNEL_BOND_SYNC_IN,
+  output logic CHANNEL_BOND_SYNC_OUT
 );
 endmodule
 `endcelldefine
