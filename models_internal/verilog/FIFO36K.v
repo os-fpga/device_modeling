@@ -274,11 +274,11 @@ wire [R_PTR_WIDTH:0] b_rptr_sync, b_rptr_w, b_rptr_w1, b_rptr_sync_for_a;
     end
 
     if(DATA_WIDTH_READ==18) begin
-      assign RD_DATA = fwft ? fwft_data : {ram_rd_parity[1:0], ram_rd_data[15:0]};    
+      assign RD_DATA = fwft ? fwft_data : {ram_rd_parity[1], ram_rd_data[15:8], ram_rd_parity[0], ram_rd_data[7:0]};    
     end
 
     if(DATA_WIDTH_READ==36) begin
-      assign RD_DATA = fwft ? fwft_data : {ram_rd_parity[3:0], ram_rd_data[31:0]};    
+      assign RD_DATA = fwft ? fwft_data : {ram_rd_parity[3], ram_rd_data[31:24], ram_rd_parity[2], ram_rd_data[23:16], ram_rd_parity[1], ram_rd_data[15:8], ram_rd_parity[0], ram_rd_data[7:0]};    
     end
 
     if(DATA_WIDTH_WRITE==9) begin       
@@ -287,13 +287,13 @@ wire [R_PTR_WIDTH:0] b_rptr_sync, b_rptr_w, b_rptr_w1, b_rptr_sync_for_a;
     end
     
     if(DATA_WIDTH_WRITE==18) begin 
-      assign ram_wr_data = {{32-DATA_WIDTH_WRITE{1'b0}}, WR_DATA[DATA_WIDTH_WRITE-3:0]};
-      assign ram_wr_parity = {2'b00, WR_DATA[DATA_WIDTH_WRITE-1:DATA_WIDTH_WRITE-2]};
+      assign ram_wr_data = {{32-DATA_WIDTH_WRITE{1'b0}}, WR_DATA[16:9],WR_DATA[7:0]};
+      assign ram_wr_parity = {2'b00, WR_DATA[17], WR_DATA[8]};
     end
     
     if(DATA_WIDTH_WRITE==36) begin
-      assign ram_wr_data = {{36-DATA_WIDTH_WRITE{1'b0}}, WR_DATA[DATA_WIDTH_WRITE-5:0]};
-      assign ram_wr_parity = {2'b00, WR_DATA[DATA_WIDTH_WRITE-1:DATA_WIDTH_WRITE-4]};
+      assign ram_wr_data = {WR_DATA[34:27], WR_DATA[25:18],WR_DATA[16:9],WR_DATA[7:0]};
+      assign ram_wr_parity = {WR_DATA[35], WR_DATA[26], WR_DATA[17], WR_DATA[8]};
     end
 
 
@@ -521,13 +521,13 @@ assign p_empty = (diff_ptr1_for_a ==PROG_EMPTY_THRESH-1 || diff_ptr1_for_a <=PRO
                 fwft_data <= WR_DATA;
               end
               else if (DATA_WIDTH_WRITE==36 && DATA_WIDTH_READ==9) begin
-                fwft_data <= {{WR_DATA[32]},{WR_DATA[7:0]}} ;  // DEVELOP LOGIC FOR OTHER WIDTH AS WELL
+                fwft_data <= {{WR_DATA[8]},{WR_DATA[7:0]}} ;  // DEVELOP LOGIC FOR OTHER WIDTH AS WELL
               end
               else if (DATA_WIDTH_WRITE==36 && DATA_WIDTH_READ==18) begin
-                fwft_data <= {{WR_DATA[33:32]},{WR_DATA[15:0]}} ;  // DEVELOP LOGIC FOR OTHER WIDTH AS WELL
+                fwft_data <= {{WR_DATA[17]},{WR_DATA[16:9]}, {WR_DATA[8]}, {WR_DATA[7:0]}} ;  // DEVELOP LOGIC FOR OTHER WIDTH AS WELL
               end
               else if (DATA_WIDTH_WRITE==18 && DATA_WIDTH_READ==9) begin
-                fwft_data <= {{WR_DATA[16]},{WR_DATA[7:0]}} ;  // DEVELOP LOGIC FOR OTHER WIDTH AS WELL
+                fwft_data <= {{WR_DATA[8]},{WR_DATA[7:0]}} ;  // DEVELOP LOGIC FOR OTHER WIDTH AS WELL
               end
 
             end
@@ -546,10 +546,10 @@ assign p_empty = (diff_ptr1_for_a ==PROG_EMPTY_THRESH-1 || diff_ptr1_for_a <=PRO
 
               if(b_wptr_next==1 || b_wptr_next==4097 ) begin
                 fwft_data [7:0] <= WR_DATA[7:0] ;
-                fwft_data [16] <= WR_DATA[8] ;
+                fwft_data [8] <= WR_DATA[8] ;
               end
               if(b_wptr_next==2 || b_wptr_next==4098 ) begin
-                fwft_data [15:8] <= WR_DATA[7:0];
+                fwft_data [16:9] <= WR_DATA[7:0];
                 fwft_data [17] <= WR_DATA[8];
               end     
         end
@@ -567,18 +567,18 @@ assign p_empty = (diff_ptr1_for_a ==PROG_EMPTY_THRESH-1 || diff_ptr1_for_a <=PRO
 
               if(b_wptr_next==1 || b_wptr_next==4097) begin
                 fwft_data [7:0] <= WR_DATA[7:0];
-                fwft_data [32] <= WR_DATA[8];
+                fwft_data [8] <= WR_DATA[8];
               end
               if(b_wptr_next==2 || b_wptr_next==4098) begin
-                fwft_data [15:8] <= WR_DATA[7:0];
-                fwft_data [33] <= WR_DATA[8];
+                fwft_data [16:9] <= WR_DATA[7:0];
+                fwft_data [17] <= WR_DATA[8];
               end     
               if(b_wptr_next==3 || b_wptr_next==4099) begin
-                fwft_data [23:16] <= WR_DATA[7:0] ;
-                fwft_data [34] <= WR_DATA[8];
+                fwft_data [25:18] <= WR_DATA[7:0] ;
+                fwft_data [26] <= WR_DATA[8];
               end
               if(b_wptr_next==4 || b_wptr_next==4100) begin
-                fwft_data [31:24] <= WR_DATA[7:0] ;
+                fwft_data [34:27] <= WR_DATA[7:0] ;
                 fwft_data [35] <= WR_DATA[8];
               end   
 
@@ -596,15 +596,19 @@ assign p_empty = (diff_ptr1_for_a ==PROG_EMPTY_THRESH-1 || diff_ptr1_for_a <=PRO
               fwft <= (EMPTY && WR_EN && !fwft)? 1 : fwft;
 
               if(b_wptr_next==1 || b_wptr_next==4097  ) begin
-                fwft_data [15:0] <= WR_DATA[15:0];
-                fwft_data [32] <= WR_DATA[16];
-                fwft_data [33] <= WR_DATA[17];
+                // fwft_data [7:0] <= WR_DATA[7:0];
+                // fwft_data [16:9] <= WR_DATA[16:9];
+                // fwft_data [8] <= WR_DATA[8];
+                // fwft_data [17] <= WR_DATA[17];
+                fwft_data[17:0] <= WR_DATA;
 
               end
               if(b_wptr_next==2 || b_wptr_next==4098 ) begin
-                fwft_data [31:16] <= WR_DATA[15:0];
-                fwft_data [34] <= WR_DATA[16];
-                fwft_data [35] <= WR_DATA[17];
+                // fwft_data [25:18] <= WR_DATA[7:0];
+                // fwft_data [34:27] <= WR_DATA[16:9];
+                // fwft_data [26] <= WR_DATA[8];
+                // fwft_data [35] <= WR_DATA[17];
+                fwft_data[35:18] <= WR_DATA;
               end       
         end
 
