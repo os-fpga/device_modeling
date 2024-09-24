@@ -18,12 +18,14 @@ module FIFO36K_tb();
   wire OVERFLOW; // FIFO overflow error flag
   wire UNDERFLOW;// FIFO underflow error flag
 
-  parameter DATA_WRITE_WIDTH = 36; // FIFO data width (1-36)
+  parameter DATA_WRITE_WIDTH = 9; // FIFO data width (1-36)
   parameter DATA_READ_WIDTH = 36; // FIFO data width (1-36)
+  reg do_overflow =0;
+  reg do_underflow =0;
 
   parameter FIFO_TYPE = "ASYNCHRONOUS"; // Synchronous or Asynchronous data transfer (SYNCHRONOUS/ASYNCHRONOUS)
-  parameter [11:0] PROG_EMPTY_THRESH = 12'h004; // 12-bit Programmable empty depth
-  parameter [11:0] PROG_FULL_THRESH = 12'h004;// 12-bit Programmable full depth
+  parameter [11:0] PROG_EMPTY_THRESH = 12'h200; // 12-bit Programmable empty depth
+  parameter [11:0] PROG_FULL_THRESH = 12'h200; // 12-bit Programmable full depth
 
   // parameter DATA_WIDTH = 36;
   localparam DEPTH_WRITE = (DATA_WRITE_WIDTH <= 9) ? 4096 :
@@ -58,17 +60,17 @@ reg [8:0] pop_data4;
   integer wren_cnt=0;
   reg [8:0] local_queue [$];
   integer fifo_number;
-  bit debug=1;
+  bit debug=0;
 
   //clock//
   initial begin
     WR_CLK = 1'b0;
-    forever #123 WR_CLK = ~WR_CLK;
+    forever #573 WR_CLK = ~WR_CLK;
 end
 
   initial begin
       RD_CLK = 1'b0;
-      forever #573 RD_CLK = ~RD_CLK;
+      forever #123 RD_CLK = ~RD_CLK;
   end
 
    FIFO36K #(
@@ -106,13 +108,17 @@ end
     check_flags();
 
     test_status(error);
-    #3;
+    #2;
     $finish();
   end
 
 integer idx=0;
-integer count=0;
-integer count1=0;
+integer WgtR_Ratio=0;
+integer RgtW_Ratio=0;
+integer prog_f=0;
+bit count_clk=0;
+bit count_clk1=0;
+bit check=0;
 
   initial begin
     
@@ -132,7 +138,17 @@ integer count1=0;
     // $dumpvars(0,FIFO36K_tb.fifo36k_inst.g_rptr_next);
   end
 
-  task check_flags();
+task rd_cycle_d();
+    repeat(3)@(posedge RD_CLK);
+    @(negedge RD_CLK);
+endtask
+
+task wr_cycle_d();
+    repeat(3)@(posedge WR_CLK);
+    @(negedge WR_CLK);
+endtask
+
+task check_flags();
     integer i;
     // resetting ptrs
     $display("--------------------------------------------");
@@ -144,7 +160,7 @@ integer count1=0;
     repeat(2) @(posedge WR_CLK);
     RESET = 0;
 //Assertion empty_ewm_fifo_flags failed!
-   if(PROG_EMPTY_THRESH>0) begin
+if(PROG_EMPTY_THRESH>0) begin
     if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b1010_0000)
       begin $display("ERROR: EMPTY AND PROG EMPTY ARE NOT ASSERTED IN START"); error=error+1; end
     end
@@ -155,182 +171,981 @@ integer count1=0;
     
     $display("CHECK FLAGS: Checking Flags on Each PUSH/POP Operation---------------------");
 
-    assign count= (DATA_WRITE_WIDTH>=DATA_READ_WIDTH)?  1: DATA_READ_WIDTH/DATA_WRITE_WIDTH; // For example ? = 4
+
+    assign WgtR_Ratio = (DATA_READ_WIDTH>=DATA_WRITE_WIDTH)?  1: DATA_WRITE_WIDTH/DATA_READ_WIDTH; // For example ? = 4
+    assign RgtW_Ratio = (DATA_WRITE_WIDTH>=DATA_READ_WIDTH)?  1: DATA_READ_WIDTH/DATA_WRITE_WIDTH; // For example ? = 4
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+   
+/////////////     //          //       /////////    //      //                       ////////////     //////////     ////////////   
+//         //     //          //    //              //      //                       //         //   //       //     //         //
+//         //     //          //    //              //      //                       //         //   //       //     //         //
+//         //     //          //    //              //////////    =============      //         //   //       //     //         //
+/////////////     //          //    ////////////    //      //    =============      ////////////    //       //     ////////////
+//                //          //               //   //      //                       //              //       //     // 
+//                //          //               //   //      //                       //              //       //     // 
+//                  // // // //     ////////////    //      //                       //              ///////////     // 
+//                     
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+if(DATA_WRITE_WIDTH==DATA_READ_WIDTH) begin
 
 // Empty De Assert
-    repeat(count) begin  // 1-4
-    push();
-    end
-    // if(count>1) begin
-    repeat(3)@(posedge RD_CLK);
-    @(negedge RD_CLK);
-    // end
-    if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0110_0000) begin      
-            begin $display("ERROR: EMPTY IS NOT DE-ASSERTED AFTER FIRST PUSH (PUSHED DATA SHOULD BE MATCHED WITH READ DATA PORT WIDTH)"); error=error+1; end
-    end
-// Almost Empty deassert
-    repeat(count) begin // 5-8
-    push();
-    end
-    // if(count>1) begin
-    repeat(3)@(posedge RD_CLK);
-    @(negedge RD_CLK);
-    // end
-    if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0010_0000) begin
-            begin $display("ERROR: ALMOST EMPTY IS NOT DE-ASSERTED AFTER 2nd PUSH (PUSHED DATA SHOULD BE MATCHED WITH READ DATA PORT WIDTH)"); error=error+1; end
-    end
+    for (int i=0; i<DEPTH_WRITE; i++) begin
 
-// prog empty de asset // 9-16
-    for (int i=count; i<(count*PROG_EMPTY_THRESH); i++ ) begin
+     
+      if(i==0) begin
+
+          fork 
+          begin
+           push();
+          end 
+          begin
+            wait(count_clk); 
+            repeat(3)@(posedge RD_CLK);
+            @(negedge RD_CLK);                                   
+          end
+          join;
+          if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0110_0000) begin      
+                  begin  $display("ERROR PUSH: EMPTY SHOULD BE DE-ASSERTED )"); error=error+1; end
+          end
+          count_clk=0;
+      end
+
+      if(i==1) begin
+
+          fork 
+          begin
+           push();
+          end 
+          begin
+            wait(count_clk); 
+            repeat(3)@(posedge RD_CLK);
+            @(negedge RD_CLK);                                   
+            if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0010_0000) begin      
+            begin $display("ERROR PUSH: ALMOST EMPTY SHOULD BE DE-ASSERTED AFTER 2nd PUSH"); error=error+1; end
+          end
+          end
+          begin
+            if(PROG_EMPTY_THRESH==2) begin
+            wait(count_clk); 
+            repeat(4)@(posedge RD_CLK);
+            @(negedge RD_CLK); 
+            if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_0000) begin      
+                    begin $display("ERROR PUSH: ALL FLAGS SHOULD BE DE-ASSERTED"); error=error+1; end
+            end                          
+            end
+          end
+          join;
+          count_clk=0;
+
+      end
+
+      if(i>1 & i<PROG_EMPTY_THRESH-1) begin
+       push();
+       count_clk=0;
+      end
+
+      if(i==PROG_EMPTY_THRESH-1) begin
+
+          fork 
+          begin
+           push();
+          end 
+          begin
+            wait(count_clk); 
+            repeat(4)@(posedge RD_CLK);
+            @(negedge RD_CLK);                                   
+            if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_0000) begin      
+            begin $display("ERROR PUSH: ALL FLAGS SHOULD BE DE-ASSERTED"); error=error+1; end
+          end
+          end
+          join;
+          count_clk=0;
+      end
+
+      if(i>PROG_EMPTY_THRESH-1 & i< DEPTH_WRITE - PROG_FULL_THRESH) begin
+       push();
+       count_clk=0;
+      end
+
+      if(i==DEPTH_WRITE- PROG_FULL_THRESH) begin
+
+       push();
+       count_clk=0;
+          if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_0010) begin      
+              begin $display("ERROR PUSH: ONLY PROG_FULL SHOULD BE ASSERTED"); error=error+1; end
+          end
+                               
+      end
+
+      if(i>DEPTH_WRITE- PROG_FULL_THRESH & i< DEPTH_WRITE -2) begin
+       push();
+      end
+
+      if(i==DEPTH_WRITE- 2) begin
+          push();
+          count_clk=0;
+          if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_0110) begin      
+              begin $display("ERROR PUSH: PROG_FULL AND ALMOST FULL SHOULD BE ASSERTED ONLY"); error=error+1; end
+          end                     
+      end
+
+      if(i==DEPTH_WRITE- 1) begin
+          push();
+          count_clk=0;
+          if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_1010) begin      
+              begin $display("ERROR PUSH: PROG_FULL AND FULL SHOULD BE ASSERTED ONLY"); error=error+1; end
+          end                     
+      end
+
+      if(do_overflow) begin
+        repeat(1) begin
+          push();
+        end
+  end
+  end
+
+end
+
+
+
+//***********************************************************************************************************************//
+
+if(DATA_READ_WIDTH == DATA_WRITE_WIDTH) begin
+
+// FULL DE-ASSERT
+
+  for (i=0; i<DEPTH_READ; i++) begin
+
+        
+        if(i==0) begin
+          
+          compare_pop_data();
+          fork 
+          begin
+           @(negedge RD_CLK);
+           RD_EN=1;
+           @(posedge RD_CLK);
+           count_clk=1;
+           @(negedge RD_CLK);
+           RD_EN=0;
+           count_enteries_pop=count_enteries_pop+1;
+           compare_pop_data();
+          end 
+          begin
+            wait(count_clk); 
+            repeat(3)@(posedge WR_CLK);
+            @(negedge WR_CLK);                                   
+          end
+          join;
+          if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_0110) begin
+            begin $display("ERROR POP: ONLY PROG FULL and ALMOST FULL SHOULD BE ASSERTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
+          end
+           count_clk=0;
+        end
+
+
+        if(i==1) begin
+       
+          fork 
+          begin
+           @(negedge RD_CLK);
+           RD_EN=1;
+           @(posedge RD_CLK);
+           count_clk=1;
+           @(negedge RD_CLK);
+           RD_EN=0;
+           count_enteries_pop=count_enteries_pop+1;
+           compare_pop_data();
+          end 
+          begin
+            wait(count_clk); 
+            repeat(3)@(posedge WR_CLK);
+            @(negedge WR_CLK);                                   
+          end
+          join;
+          if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_0010) begin
+            begin $display("ERROR POP: ONLY PROG FULL SHOULD BE ASSERTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
+          end
+          count_clk=0;
+
+        end
+
+        if(i>1 & i<PROG_FULL_THRESH-1) begin
+          pop();
+          count_enteries_pop=count_enteries_pop+1;
+          compare_pop_data();
+        end
+  
+        if(i==PROG_FULL_THRESH-1) begin
+          fork 
+          begin
+           @(negedge RD_CLK);
+           RD_EN=1;
+           @(posedge RD_CLK);
+           count_clk=1;
+           @(negedge RD_CLK);
+           RD_EN=0;
+          count_enteries_pop=count_enteries_pop+1;
+          compare_pop_data();
+          end 
+          begin
+            wait(count_clk); 
+            repeat(4)@(posedge WR_CLK);
+            @(negedge WR_CLK);                                   
+          end
+          join;
+          if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_0000) begin
+            begin $display("ERROR POP: ALL FLAGS SHOULD BE DEASSERTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
+          end
+           count_clk=0;
+        end
+
+       if(i>PROG_FULL_THRESH-1 & i < DEPTH_READ-PROG_EMPTY_THRESH) begin
+          pop();
+          count_enteries_pop=count_enteries_pop+1;
+          compare_pop_data();
+        end        
+
+        if(i==DEPTH_READ-PROG_EMPTY_THRESH)  begin
+          fork 
+          begin
+           @(negedge RD_CLK);
+           RD_EN=1;
+           @(posedge RD_CLK);
+           count_clk=1;
+           @(negedge RD_CLK);
+           RD_EN=0;
+           count_enteries_pop=count_enteries_pop+1;
+           compare_pop_data();
+
+          end 
+          begin
+            wait(count_clk);
+            @(negedge RD_CLK); 
+            if(PROG_EMPTY_THRESH >2) begin
+              if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0010_0000) begin
+                begin $display("ERROR POP: ONLY PROG EMPTY SHOULD BE ASSERTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
+              end
+            end
+            if(PROG_EMPTY_THRESH ==2) begin
+              if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0110_0000) begin
+                begin $display("ERROR POP: ONLY PROG EMPTY  AND ALMOST EMPTY SHOULD BE ASSERTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1;  $display ("??????"); end
+              end
+            end
+          end
+          join;
+           count_clk=0;
+        end
+
+       if(i>DEPTH_READ-PROG_EMPTY_THRESH & i < DEPTH_READ-1) begin
+          pop();
+          count_enteries_pop=count_enteries_pop+1;
+          compare_pop_data();
+        end 
+
+
+        if(i==DEPTH_READ-1)  begin
+          fork 
+          begin
+           @(negedge RD_CLK);
+           RD_EN=1;
+           @(posedge RD_CLK);
+           count_clk=1;
+           @(negedge RD_CLK);
+           RD_EN=0;
+          count_enteries_pop=count_enteries_pop+1;
+          compare_pop_data();
+          end 
+          begin
+            wait(count_clk);
+            @(negedge RD_CLK); 
+            if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b1010_0000) begin
+              begin $display("ERROR : Only PROG_EMPTY AND ALMOST EMPTED SHOULD BE ASSERTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
+            end
+          end
+          join;
+           count_clk=0;
+        end
+
+      if(do_underflow) begin
+          @(negedge RD_CLK);
+           RD_EN=1;
+           @(posedge RD_CLK);
+           count_clk=1;
+           @(negedge RD_CLK);
+           RD_EN=0;
+          count_enteries_pop=count_enteries_pop+1;
+          compare_pop_data();
+      end
+
+
+  end
+end
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+   
+/////////////     //          //       /////////    //      //                       ////////////     //////////     ////////////   
+//         //     //          //    //              //      //                       //         //   //       //     //         //
+//         //     //          //    //              //      //                       //         //   //       //     //         //
+//         //     //          //    //              //////////    =============      //         //   //       //     //         //
+/////////////     //          //    ////////////    //      //                ||     ////////////    //       //     ////////////
+//                //          //               //   //      //                ||     //              //       //     // 
+//                //          //               //   //      //    =============      //              //       //     // 
+//                  // // // //     ////////////    //      //                       //              ///////////     // 
+//                     
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+if(  DATA_WRITE_WIDTH > DATA_READ_WIDTH  ) begin
+
+for (int i=0; i<DEPTH_WRITE; i++) begin  //DEPTH_WRITE
+
+  if(i==0) begin
+
+          fork 
+          begin
+           push();
+          end 
+          begin
+            wait(count_clk); 
+            repeat(3)@(posedge RD_CLK);
+            @(negedge RD_CLK);                                   
+                    if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0010_0000) begin      
+                  begin  $display("ERROR PUSH: ONLY ALMOST EMPTY SHOULD BE ASSERTED"); error=error+1; end
+          end
+          end
+          begin
+            
+          if(PROG_EMPTY_THRESH <= (i+1)*WgtR_Ratio ) begin
+          wait(count_clk);   
+          repeat(4)@(posedge RD_CLK);
+          @(negedge RD_CLK);
+          if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_0000) begin      
+                begin $display("ERROR PUSH: ALL FLAGS DEASSERTED"); error=error+1; end
+          end
+          end
+          end
+          join;
+          count_clk=0;
+  end
+  
+  if(i>0 & i<DEPTH_WRITE-PROG_FULL_THRESH) begin
+
+      if(PROG_EMPTY_THRESH < WgtR_Ratio*(i+1) & PROG_EMPTY_THRESH > WgtR_Ratio*(i+2)) begin
+            fork 
+              begin
+              push();
+              end 
+              begin
+                wait(count_clk); 
+                repeat(4)@(posedge RD_CLK);
+                @(negedge RD_CLK);                                   
+                        if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_0000) begin      
+                      begin  $display("ERROR PUSH: ALL DEASSERTED"); error=error+1; end
+              end
+              end
+              join;
+              count_clk=0;
+        end
+        else begin
+            push();
+            count_clk=0;
+        end
+  end
+
+
+  if(i==DEPTH_WRITE-PROG_FULL_THRESH) begin
+
+          fork 
+          begin
+           push();
+          end 
+          begin
+            wait(count_clk);  
+            @(negedge WR_CLK);
+            if(PROG_FULL_THRESH >2) begin                                
+              if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_0010) begin      
+              begin  $display("ERROR PUSH: ONLY PROG FULL SHOULD BE ASSERTED"); error=error+1; end
+              end
+            end
+            else begin
+              if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_0110) begin      
+              begin  $display("ERROR PUSH: ONLY PROG FULL AND ALMOST FULL SHOULD BE ASSERTED"); error=error+1; end
+              end
+            end
+          end
+          join;
+          count_clk=0;
+  end
+
+  if(i>DEPTH_WRITE-PROG_FULL_THRESH & i<DEPTH_WRITE-2) begin
+          push();
+          count_clk=0;
+  end
+
+  if(i==DEPTH_WRITE-2) begin
+
+          fork 
+          begin
+           push();
+          end 
+          begin
+            wait(count_clk);  
+            @(negedge WR_CLK);                                
+              if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_0110) begin      
+              begin  $display("ERROR PUSH: ONLY PROG FULL AND ALMOST FULL SHOULD BE ASSERTED"); error=error+1; end
+          end
+          end
+          join;
+          count_clk=0;
+  end
+
+  if(i==DEPTH_WRITE-1) begin
+
+          fork 
+          begin
+           push();
+          end 
+          begin
+            wait(count_clk);  
+            @(negedge WR_CLK);                                
+              if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_1010) begin      
+              begin  $display("ERROR PUSH: ONLY PROG FULL AND FULL SHOULD BE ASSERTED"); error=error+1; end
+          end
+          end
+          join;
+          count_clk=0;
+  end
+
+  if(do_overflow) begin
+    repeat(1) begin
       push();
     end
+  end
+
+end
+
+end
+
+//*******************************************************************************************************************//
+
+if(DATA_READ_WIDTH < DATA_WRITE_WIDTH) begin
+
+// FULL DE-ASSERT
+
+  for (int i=0; i<DEPTH_READ; i++) begin
+
+
+        if(i<WgtR_Ratio-1) begin
+          compare_pop_data();
+          pop();
+          count_enteries_pop=count_enteries_pop+1;
+        end
+        
+        if(i==WgtR_Ratio-1) begin
+          
+          compare_pop_data();
+          fork 
+          begin
+           @(negedge RD_CLK);
+           RD_EN=1;
+           @(posedge RD_CLK);
+           count_clk=1;
+           @(negedge RD_CLK);
+           RD_EN=0;
+           count_enteries_pop=count_enteries_pop+1;
+           compare_pop_data();
+          end 
+          begin
+            wait(count_clk); 
+            repeat(3)@(posedge WR_CLK);
+            @(negedge WR_CLK);                                   
+          end
+          join;
+          if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_0110) begin
+            begin $display("ERROR POP: ONLY PROG FULL and ALMOST FULL SHOULD BE ASSERTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
+          end
+           count_clk=0;
+        end
+
+        if(i>WgtR_Ratio-1 & i <2*WgtR_Ratio-1) begin
+          pop();
+          count_enteries_pop=count_enteries_pop+1;
+          compare_pop_data();
+        end
+        
+        if(i==2*WgtR_Ratio-1) begin
+          
+          fork 
+          begin
+           @(negedge RD_CLK);
+           RD_EN=1;
+           @(posedge RD_CLK);
+           count_clk=1;
+           @(negedge RD_CLK);
+           RD_EN=0;
+           count_enteries_pop=count_enteries_pop+1;
+           compare_pop_data();
+          end 
+          begin
+            wait(count_clk); 
+            repeat(3)@(posedge WR_CLK);
+            @(negedge WR_CLK);                                   
+          end
+          join;
+          if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_0010) begin
+            begin $display("ERROR POP: ONLY PROG FULL SHOULD BE ASSERTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
+          end
+          count_clk=0;
+        end
+
+
+        if(i >2*WgtR_Ratio-1 & i < (PROG_FULL_THRESH*WgtR_Ratio)-1) begin
+          pop();
+          count_enteries_pop=count_enteries_pop+1;
+          compare_pop_data();
+        end
+        
+
+        if(i==(PROG_FULL_THRESH*WgtR_Ratio)-1) begin
+          fork 
+          begin
+           @(negedge RD_CLK);
+           RD_EN=1;
+           @(posedge RD_CLK);
+           count_clk=1;
+           @(negedge RD_CLK);
+           RD_EN=0;
+          count_enteries_pop=count_enteries_pop+1;
+          compare_pop_data();
+          end 
+          begin
+            wait(count_clk); 
+            repeat(4)@(posedge WR_CLK);
+            @(negedge WR_CLK);                                   
+          end
+          join;
+          if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_0000) begin
+            begin $display("ERROR POP: ALL FLAGS SHOULD BE DEASSERTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
+          end
+           count_clk=0;
+        end
+
+     if( i> (PROG_FULL_THRESH*WgtR_Ratio)-1 & i < DEPTH_READ - (PROG_EMPTY_THRESH)) begin
+          pop();
+          count_enteries_pop=count_enteries_pop+1;
+          compare_pop_data();
+        end
+        
+      
+        if(i==DEPTH_READ - PROG_EMPTY_THRESH)  begin
+          fork 
+          begin
+           @(negedge RD_CLK);
+           RD_EN=1;
+           @(posedge RD_CLK);
+           count_clk=1;
+           @(negedge RD_CLK);
+           RD_EN=0;
+           count_enteries_pop=count_enteries_pop+1;
+           compare_pop_data();
+          end 
+          begin
+            wait(count_clk);
+            @(negedge RD_CLK); 
+            if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0010_0000) begin
+              begin $display("ERROR POP: ONLY PROG EMPTY SHOULD BE ASSERTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
+            end
+          end
+          join;
+           count_clk=0;
+        end
+
+     if( i> DEPTH_READ - PROG_EMPTY_THRESH & i < DEPTH_READ -2 ) begin
+          pop();
+          count_enteries_pop=count_enteries_pop+1;
+          compare_pop_data();
+        end
+        
+        if(i==DEPTH_READ-2)  begin
+          fork 
+          begin
+           @(negedge RD_CLK);
+           RD_EN=1;
+           @(posedge RD_CLK);
+           count_clk=1;
+           @(negedge RD_CLK);
+           RD_EN=0;
+           count_enteries_pop=count_enteries_pop+1;
+           compare_pop_data();
+
+          end 
+          begin
+            wait(count_clk);
+            @(negedge RD_CLK); 
+            if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0110_0000) begin
+              begin $display("ERROR POP: Only PROG_EMPTY AND ALMOST EMPTED SHOULD BE ASSERTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
+            end
+          end
+          join;
+           count_clk=0;
+        end
+
+        if(i==DEPTH_READ-1)  begin
+          fork 
+          begin
+           @(negedge RD_CLK);
+           RD_EN=1;
+           @(posedge RD_CLK);
+           count_clk=1;
+           @(negedge RD_CLK);
+           RD_EN=0;
+          count_enteries_pop=count_enteries_pop+1;
+          compare_pop_data();
+          end 
+          begin
+            wait(count_clk);
+            @(negedge RD_CLK); 
+            if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b1010_0000) begin
+              begin $display("ERROR POP: EMPTY AND PROG_EMPTY SHOULD BE DE_ASSERTED ONLY %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
+            end
+          end
+          join;
+           count_clk=0;
+        end
+
+      if(do_underflow) begin
+          @(negedge RD_CLK);
+           RD_EN=1;
+           @(posedge RD_CLK);
+           count_clk=1;
+           @(negedge RD_CLK);
+           RD_EN=0;
+          count_enteries_pop=count_enteries_pop+1;
+          compare_pop_data();
+      end
+
+  end
+
+end
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+   
+/////////////     //          //       /////////    //      //                       ////////////     //////////     ////////////   
+//         //     //          //    //              //      //                       //         //   //       //     //         //
+//         //     //          //    //              //      //                       //         //   //       //     //         //
+//         //     //          //    //              //////////    =============      //         //   //       //     //         //
+/////////////     //          //    ////////////    //      //    ||                 ////////////    //       //     ////////////
+//                //          //               //   //      //    ||                 //              //       //     // 
+//                //          //               //   //      //    =============      //              //       //     // 
+//                  // // // //     ////////////    //      //                       //              ///////////     // 
+//                     
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+if(DATA_WRITE_WIDTH < DATA_READ_WIDTH) begin
+
+// Empty De Assert
+      repeat(RgtW_Ratio) begin  // 1-4
+        push();
+        count_clk=0;
+      end
+      rd_cycle_d();
+      if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0110_0000) begin      
+              begin $display("ERROR PUSH: PROG_EMPTY AND ALMOST EMPTY SHOULD BE ASSERTED"); error=error+1; end
+      end
+
+// Almost Empty deassert
+      repeat(RgtW_Ratio) begin // 5-8
+          push();
+        count_clk=0;
+
+        end
+      rd_cycle_d();
+      if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0010_0000) begin      
+              begin $display("ERROR PUSH: ONLY PROG EMPTY SHOULD BE ASSERTED"); error=error+1; end
+      end
+
+// prog empty de asset // 9-16
+    for (int i=RgtW_Ratio; i<(RgtW_Ratio*PROG_EMPTY_THRESH)- RgtW_Ratio+1; i++ ) begin
+      push();
+        count_clk=0;    
+    end
     // if(count>1) begin
-    repeat(3)@(posedge RD_CLK);
+    repeat(4)@(posedge RD_CLK);
     @(negedge RD_CLK);
     // end
     if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_0000) begin
-            begin $display("ERROR: PROG EMPTY IS NOT DE-ASSERTED AFTER PROG-THRESH HOLD PUSHES (PUSHED DATA SHOULD BE MATCHED WITH READ DATA PORT WIDTH)"); error=error+1; end
+            begin $display("ERROR PUSH: ALL FLAGS SHOULD BE DE ASSERTED"); error=error+1; end
     end
 
 // prog full assert // 17-4980
-    for (int i= (count*PROG_FULL_THRESH); i< ( DEPTH_WRITE - (count*PROG_FULL_THRESH)-(count) ); i++ ) begin
+    for (int i= (RgtW_Ratio*PROG_EMPTY_THRESH)- RgtW_Ratio+1; i< ( DEPTH_WRITE  - PROG_FULL_THRESH - (RgtW_Ratio-1) ); i++ ) begin
       push();
+      count_clk=0;
     end
     // @(negedge RD_CLK);
+    if(PROG_FULL_THRESH !=2) begin
     if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_0010) begin
-            begin $display("ERROR: PROG FULL IS NOT ASSERTED"); error=error+1; end
+            begin $display("ERROR PUSH: ONLY PROG FULL SHOULD BE ASSERTED"); error=error+1; end
+    end
     end
 
- 
+    if(PROG_FULL_THRESH ==2) begin
+    if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_0110) begin
+            begin $display("ERROR PUSH: ONLY PROG FULL AND ALMOST FULL SHOULD BE ASSERTED"); error=error+1; end
+    end
+    end
+
+
+   prog_f = ( DEPTH_WRITE  - PROG_FULL_THRESH - (RgtW_Ratio-1) );
+
   // almost full assert 
 
-    for (int i= ( (DEPTH_WRITE) - (count*PROG_FULL_THRESH)-(count) ) ; i< ( DEPTH_WRITE-(count) -count); i++ ) begin
+    for (int i= prog_f ; i < ( DEPTH_WRITE  - 2 - (RgtW_Ratio-1) ); i++ ) begin
       push();
+      count_clk=0;  
     end
   
     if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_0110) begin
-      begin $display("ERROR: ALMOST FULL IS NOT ASSERTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
+      begin $display("ERROR PUSH: ONLY PROG FULL AND ALMOST FULL SHOULD BE ASSERTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
     end
-
 
   // full assert
 
-   repeat(count) begin
+   repeat(1) begin
     push();
+    count_clk=0;
    end
 
     if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_1010) begin
-      begin $display("ERROR: FULL IS NOT ASSERTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
+      begin $display("ERROR PUSH: ONLY PROG FULL AND FULL SHOULD BE ASSERTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
     end
+
 
 // overflow
+
+if(do_overflow) begin
    repeat(1) begin
     push();
+    count_clk=0;
    end
-      // @(negedge WR_CLK);
+end
 
-  if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_1011) begin
-    begin $display("ERROR: OVERFLOW IS NOT ASSERTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
+end
+
+
+//*****************************************************************************************************************//
+
+
+if(DATA_READ_WIDTH > DATA_WRITE_WIDTH) begin
+
+// FULL DE-ASSERT
+
+  for (int i=0; i<DEPTH_READ; i++) begin
+
+
+      if(i==0 ) begin
+          compare_pop_data();
+          fork begin
+           @(negedge RD_CLK);
+           RD_EN=1;
+           @(posedge RD_CLK);
+           count_clk=1;
+           @(negedge RD_CLK);
+           RD_EN=0;
+          count_enteries_pop=count_enteries_pop+1;
+          compare_pop_data();
+          end 
+          begin
+            wait(count_clk); 
+            repeat(3)@(posedge WR_CLK);
+            @(negedge WR_CLK);                                   
+          end
+          begin
+
+          if(PROG_FULL_THRESH<=1*RgtW_Ratio) begin
+            wait(count_clk); 
+            repeat(4)@(posedge WR_CLK);
+                @(negedge WR_CLK);              
+          
+              if(PROG_FULL !== 1'b0) begin
+                begin $display("ERROR POP: PROG FULL BE DE ASSRTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end            
+              end
+          end  
+
+          end
+
+          join;
+          if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,OVERFLOW} !== 7'b0000_000) begin
+            begin   $display("ERROR POP: ALL FLAGS SHOULD BE DE-ASSERTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
+          end
+          count_clk=0;
+      end
+
+  if(i>0 & i<DEPTH_READ-PROG_EMPTY_THRESH) begin
+
+      if(PROG_FULL_THRESH < RgtW_Ratio*(i+1) & PROG_FULL_THRESH > RgtW_Ratio*(i+2)) begin
+            fork 
+              begin
+              @(negedge RD_CLK);
+              RD_EN=1;
+              @(posedge RD_CLK);
+              count_clk=1;
+              @(negedge RD_CLK);
+              RD_EN=0;
+              count_enteries_pop=count_enteries_pop+1;
+              compare_pop_data();
+              end 
+              begin
+                wait(count_clk); 
+                repeat(4)@(posedge WR_CLK);
+                @(negedge WR_CLK);                                   
+                        if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_0000) begin      
+                      begin  $display("ERROR PUSH: ONLY PROG FULL AND ALMOST FULL SHOULD BE ASSERTED"); error=error+1; end
+              end
+              end
+              join;
+              count_clk=0;
+        end
+        else begin
+            pop();
+            count_enteries_pop=count_enteries_pop+1;
+            compare_pop_data();  
+            count_clk=0;
+        end
   end
 
-#100;
+
+  if(i==DEPTH_READ-PROG_EMPTY_THRESH) begin
+
+          fork 
+          begin
+              @(negedge RD_CLK);
+              RD_EN=1;
+              @(posedge RD_CLK);
+              count_clk=1;
+              @(negedge RD_CLK);
+              RD_EN=0;
+            count_enteries_pop=count_enteries_pop+1;
+            compare_pop_data();  
+          end 
+          begin
+            wait(count_clk);  
+            @(negedge RD_CLK);
+            if(PROG_EMPTY_THRESH >2) begin                                
+              if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0010_0000) begin      
+              begin  $display("ERROR POP: ONLY PROG EMPTY SHOULD BE ASSERTED"); error=error+1; end
+              end
+            end
+            else begin
+              if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0110_0000) begin      
+              begin  $display("ERROR POP: ONLY PROG EMPTY AND ALMOST EMPTY SHOULD BE ASSERTED"); error=error+1; end
+              end
+            end
+          end
+          join;
+          count_clk=0;
+  end
 
 
-// read 
-  assign count1= (DATA_READ_WIDTH>=DATA_WRITE_WIDTH)?  1: DATA_WRITE_WIDTH/DATA_READ_WIDTH; // For example ? = 4
+  if(i>DEPTH_READ-PROG_EMPTY_THRESH & i <DEPTH_READ-2) begin
+
+
+              @(negedge RD_CLK);
+              RD_EN=1;
+              @(posedge RD_CLK);
+              count_clk=1;
+              @(negedge RD_CLK);
+              RD_EN=0;
+            count_enteries_pop=count_enteries_pop+1;
+            compare_pop_data(); 
+            count_clk=0; 
+  end
+
+  if(i==DEPTH_READ-2) begin
+
+          fork 
+          begin
+              @(negedge RD_CLK);
+              RD_EN=1;
+              @(posedge RD_CLK);
+              count_clk=1;
+              @(negedge RD_CLK);
+              RD_EN=0;
+            count_enteries_pop=count_enteries_pop+1;
+            compare_pop_data();  
+          end 
+          begin
+            wait(count_clk);  
+            @(negedge RD_CLK);
+              if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0110_0000) begin      
+              begin  $display("ERROR POP: ONLY PROG EMPTY AND ALMOST EMPTY SHOULD BE ASSERTED"); error=error+1; end
+              end
+          end
+          join;
+          count_clk=0;
+  end
   
-  compare_pop_data();
-  repeat(count1) begin
-    pop();
-    compare_pop_data();
-  end
-  
-  repeat(3) @(posedge WR_CLK);
-  @(negedge WR_CLK);
-  
-  // repeat (10) @ (posedge WR_CLK);
-  $display("Check time : %0t", $time);
+    if(i==DEPTH_READ-1) begin
 
-  if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_0110) begin
-    begin $display("ERROR: OVERFLOW IS DE-ASSERTED AND PROG FULL AND ALMOST FULL ASSERTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
-  end
-
-
-  repeat(count1) begin
-    pop();
-    compare_pop_data();
-   end
-  // if(count1>1) begin
-  repeat(3) @(posedge WR_CLK);
-  @(negedge WR_CLK);
-  // end  
-  if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_0010) begin
-    begin $display("ERROR: ONLY PROG FULL SHOULD BE ASSERTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
+          fork 
+          begin
+              @(negedge RD_CLK);
+              RD_EN=1;
+              @(posedge RD_CLK);
+              count_clk=1;
+              @(negedge RD_CLK);
+              RD_EN=0;
+            count_enteries_pop=count_enteries_pop+1;
+            compare_pop_data();  
+          end 
+          begin
+            wait(count_clk);  
+            @(negedge RD_CLK);
+              if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b1010_0000) begin      
+              begin  $display("ERROR POP: ONLY PROG EMPTY AND EMPTY SHOULD BE ASSERTED"); error=error+1; end
+              end
+          end
+          join;
+          count_clk=0;
   end
 
-// prog full de asset 
-    for (int i=count1; i<(count1*PROG_FULL_THRESH); i++ ) begin
-      pop();
-      compare_pop_data();
-    end
-    // if(count>1) begin
-    repeat(3)@(posedge WR_CLK);
-    @(negedge WR_CLK);
-    // end
-    if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0000_0000) begin
-        begin $display("ERROR: NO FLAG SHOULD BE ASSETED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
-    end
-
-// prog empty assert 
-    for (int i= (count1*PROG_EMPTY_THRESH); i< ( DEPTH_READ - (count1*PROG_EMPTY_THRESH)-(count1) ); i++ ) begin
-      pop();
-      compare_pop_data();
-    end
-    // @(negedge RD_CLK);
-    if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0010_0000) begin
-        begin $display("ERROR: ONLY PROG EMPTY SHOULD BE ASSERTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
-    end
-
-//  almost empty assert 
-
-    for (int i= ( (DEPTH_READ) - (count1*PROG_EMPTY_THRESH)-(count1) ) ; i< ( DEPTH_READ-(count1) -count1); i++ ) begin
-      pop();
-      compare_pop_data();
-    end
-
-    if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b0110_0000) begin
-      begin $display("ERROR: ONLY ALMOST EMPTY PROG EMPTY SHOULD BE ASSERTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
-    end
+      if(do_underflow) begin
+          @(negedge RD_CLK);
+           RD_EN=1;
+           @(posedge RD_CLK);
+           count_clk=1;
+           @(negedge RD_CLK);
+           RD_EN=0;
+          count_enteries_pop=count_enteries_pop+1;
+          compare_pop_data();
+      end
 
 
-  // empty assert
-
-   repeat(count1) begin
-    pop();
-    compare_pop_data();
-   end
-
-    if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b1010_0000) begin
-      begin $display("ERROR: ONLY EMPTY AND PROG EMPTY SHOULD BE ASSERTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
-    end
-
-// underflow
-   repeat(1) begin
-    pop();
-   end
-      @(negedge RD_CLK);
-
-  if ({EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW} !== 8'b1011_0000) begin
-    begin $display("ERROR: ONLY UDERFLOW , EMPTY AND PROG EMPTY SHOULD BE ASSERTED %0b", {EMPTY,ALMOST_EMPTY,PROG_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,PROG_FULL,OVERFLOW}); error=error+1; end
-  end
-
-  endtask : check_flags 
+end
+end
+endtask : check_flags 
 
 task push();
       @(negedge WR_CLK);
       WR_EN = 1;
       WR_DATA = $urandom_range(0, 2**DATA_WRITE_WIDTH-1);
       // WR_DATA = $random();
+      @(posedge WR_CLK);
+      count_clk=1;
       @(negedge WR_CLK);
 
 /* ----------------------------------- push byte date ---------------------------------- */
@@ -350,23 +1165,23 @@ task push();
       else if(DATA_WRITE_WIDTH==18) begin  // 18
         
         if (count_enteries_push==0) begin
-           fwft_data1 = {WR_DATA[16],WR_DATA[7:0]};
-           fwft_data2 = {WR_DATA[17],WR_DATA[15:8]};
+           fwft_data1 = {WR_DATA[8],WR_DATA[7:0]};
+           fwft_data2 = {WR_DATA[17],WR_DATA[16:9]};
         end    
-        local_queue.push_back({WR_DATA[16],WR_DATA[7:0]});  
-        local_queue.push_back({WR_DATA[17],WR_DATA[15:8]});  
+        local_queue.push_back({WR_DATA[8],WR_DATA[7:0]});  
+        local_queue.push_back({WR_DATA[17],WR_DATA[16:9]});  
       end
       else begin     // 36
         if (count_enteries_push==0) begin
-           fwft_data1 = {WR_DATA[32],WR_DATA[7:0]};
-           fwft_data2 = {WR_DATA[33],WR_DATA[15:8]};
-           fwft_data3 = {WR_DATA[34],WR_DATA[23:16]};
-           fwft_data4 = {WR_DATA[35],WR_DATA[31:24]};
+           fwft_data1 = {WR_DATA[8],WR_DATA[7:0]};
+           fwft_data2 = {WR_DATA[17],WR_DATA[16:9]};
+           fwft_data3 = {WR_DATA[26],WR_DATA[25:18]};
+           fwft_data4 = {WR_DATA[35],WR_DATA[34:27]};
         end    
-        local_queue.push_back({WR_DATA[32],WR_DATA[7:0]});  
-        local_queue.push_back({WR_DATA[33],WR_DATA[15:8]});  
-        local_queue.push_back({WR_DATA[34],WR_DATA[23:16]});  
-        local_queue.push_back({WR_DATA[35],WR_DATA[31:24]});  
+        local_queue.push_back({WR_DATA[8],WR_DATA[7:0]});  
+        local_queue.push_back({WR_DATA[17],WR_DATA[16:9]});  
+        local_queue.push_back({WR_DATA[26],WR_DATA[25:18]});  
+        local_queue.push_back({WR_DATA[35],WR_DATA[34:27]});  
       end 
    end
 // R-18
@@ -391,24 +1206,24 @@ task push();
       else if(DATA_WRITE_WIDTH==18) begin  // 18
         
         if (count_enteries_push==0) begin
-           fwft_data1 = {WR_DATA[16],WR_DATA[7:0]};
-           fwft_data2 = {WR_DATA[17],WR_DATA[15:8]};
+           fwft_data1 = {WR_DATA[8],WR_DATA[7:0]};
+           fwft_data2 = {WR_DATA[17],WR_DATA[16:9]};
         end    
-        local_queue.push_back({WR_DATA[16],WR_DATA[7:0]});  
-        local_queue.push_back({WR_DATA[17],WR_DATA[15:8]});  
+        local_queue.push_back({WR_DATA[8],WR_DATA[7:0]});  
+        local_queue.push_back({WR_DATA[17],WR_DATA[16:9]});  
       end
 
       else begin     // 36
         if (count_enteries_push==0) begin
-           fwft_data1 = {WR_DATA[32],WR_DATA[7:0]};
-           fwft_data2 = {WR_DATA[33],WR_DATA[15:8]};
-           fwft_data3 = {WR_DATA[34],WR_DATA[23:16]};
-           fwft_data4 = {WR_DATA[35],WR_DATA[31:24]};
+           fwft_data1 = {WR_DATA[8],WR_DATA[7:0]};
+           fwft_data2 = {WR_DATA[17],WR_DATA[16:9]};
+           fwft_data3 = {WR_DATA[26],WR_DATA[25:18]};
+           fwft_data4 = {WR_DATA[35],WR_DATA[34:27]};
         end    
-        local_queue.push_back({WR_DATA[32],WR_DATA[7:0]});  
-        local_queue.push_back({WR_DATA[33],WR_DATA[15:8]});  
-        local_queue.push_back({WR_DATA[34],WR_DATA[23:16]});  
-        local_queue.push_back({WR_DATA[35],WR_DATA[31:24]});  
+        local_queue.push_back({WR_DATA[8],WR_DATA[7:0]});  
+        local_queue.push_back({WR_DATA[17],WR_DATA[16:9]});  
+        local_queue.push_back({WR_DATA[26],WR_DATA[25:18]});  
+        local_queue.push_back({WR_DATA[35],WR_DATA[34:27]});  
       end 
   end
 
@@ -447,28 +1262,28 @@ task push();
       else if(DATA_WRITE_WIDTH==18) begin  // 18
         
         if (count_enteries_push==0) begin
-           fwft_data1 = {WR_DATA[16],WR_DATA[7:0]};
-           fwft_data2 = {WR_DATA[17],WR_DATA[15:8]};
+           fwft_data1 = {WR_DATA[8],WR_DATA[7:0]};
+           fwft_data2 = {WR_DATA[17],WR_DATA[16:9]};
         end
         else if (count_enteries_push==1) begin
-           fwft_data3 = {WR_DATA[16],WR_DATA[7:0]};
-           fwft_data4 = {WR_DATA[17],WR_DATA[15:8]};
+           fwft_data3 = {WR_DATA[8],WR_DATA[7:0]};
+           fwft_data4 = {WR_DATA[17],WR_DATA[16:9]};
         end   
-        local_queue.push_back({WR_DATA[16],WR_DATA[7:0]});  
-        local_queue.push_back({WR_DATA[17],WR_DATA[15:8]});  
+        local_queue.push_back({WR_DATA[8],WR_DATA[7:0]});  
+        local_queue.push_back({WR_DATA[17],WR_DATA[16:9]});  
       end
 
       else begin     // 36
         if (count_enteries_push==0) begin
-           fwft_data1 = {WR_DATA[32],WR_DATA[7:0]};
-           fwft_data2 = {WR_DATA[33],WR_DATA[15:8]};
-           fwft_data3 = {WR_DATA[34],WR_DATA[23:16]};
-           fwft_data4 = {WR_DATA[35],WR_DATA[31:24]};
+           fwft_data1 = {WR_DATA[8],WR_DATA[7:0]};
+           fwft_data2 = {WR_DATA[17],WR_DATA[16:9]};
+           fwft_data3 = {WR_DATA[26],WR_DATA[25:18]};
+           fwft_data4 = {WR_DATA[35],WR_DATA[34:27]};
         end    
-        local_queue.push_back({WR_DATA[32],WR_DATA[7:0]});  
-        local_queue.push_back({WR_DATA[33],WR_DATA[15:8]});  
-        local_queue.push_back({WR_DATA[34],WR_DATA[23:16]});  
-        local_queue.push_back({WR_DATA[35],WR_DATA[31:24]});  
+        local_queue.push_back({WR_DATA[8],WR_DATA[7:0]});  
+        local_queue.push_back({WR_DATA[17],WR_DATA[16:9]});  
+        local_queue.push_back({WR_DATA[26],WR_DATA[25:18]});  
+        local_queue.push_back({WR_DATA[35],WR_DATA[34:27]});  
       end 
   end
 
@@ -527,15 +1342,15 @@ task compare_pop_data();
     if(DATA_WRITE_WIDTH==9) begin
        if (count_enteries_pop==2048) begin
 
-          compare({RD_DATA[16],RD_DATA[7:0]}, fwft_data1);
-          compare({RD_DATA[17],RD_DATA[15:8]}, fwft_data2);
+          compare({RD_DATA[8],RD_DATA[7:0]}, fwft_data1);
+          compare({RD_DATA[17],RD_DATA[16:9]}, fwft_data2);
 
         end
         else begin
             pop_data1= local_queue.pop_front();
             pop_data2= local_queue.pop_front();
-            compare({RD_DATA[16], RD_DATA[7:0]},  {pop_data1[8], pop_data1[7:0]});
-            compare({RD_DATA[17], RD_DATA[15:8]}, {pop_data2[8], pop_data2[7:0]});
+            compare({RD_DATA[8], RD_DATA[7:0]},   {pop_data1[8], pop_data1[7:0]});
+            compare({RD_DATA[17], RD_DATA[16:9]}, {pop_data2[8], pop_data2[7:0]});
         end
     end
   
@@ -544,16 +1359,16 @@ task compare_pop_data();
        if (count_enteries_pop==2048) begin
           pop_data1= local_queue.pop_front();
           pop_data2= local_queue.pop_front();
-          compare({RD_DATA[16],RD_DATA[7:0]}, fwft_data1);
-          compare({RD_DATA[17],RD_DATA[15:8]}, fwft_data2);
+          compare({RD_DATA[8],RD_DATA[7:0]}, fwft_data1);
+          compare({RD_DATA[17],RD_DATA[16:9]}, fwft_data2);
         end
         
         else begin
           
           pop_data1= local_queue.pop_front();
           pop_data2= local_queue.pop_front();
-          compare({RD_DATA[16], RD_DATA[7:0]},  {pop_data1[8], pop_data1[7:0]});
-          compare({RD_DATA[17], RD_DATA[15:8]}, {pop_data2[8], pop_data2[7:0]});
+          compare({RD_DATA[8], RD_DATA[7:0]},  {pop_data1[8], pop_data1[7:0]});
+          compare({RD_DATA[17], RD_DATA[16:9]}, {pop_data2[8], pop_data2[7:0]});
         end
     end
 
@@ -561,15 +1376,15 @@ task compare_pop_data();
 
        if (count_enteries_pop==2048) begin
 
-          compare({RD_DATA[16], RD_DATA[7:0]}, fwft_data1);
-          compare({RD_DATA[17], RD_DATA[15:8]}, fwft_data2);
+          compare({RD_DATA[8], RD_DATA[7:0]}, fwft_data1);
+          compare({RD_DATA[17], RD_DATA[16:9]}, fwft_data2);
         end
 
         else begin
           pop_data1= local_queue.pop_front();
           pop_data2= local_queue.pop_front();
-          compare({RD_DATA[16], RD_DATA[7:0]}, {pop_data1[8], pop_data1[7:0]});
-          compare( {{RD_DATA[17], RD_DATA[15:8]}}, {{pop_data2[8], pop_data2[7:0]}});
+          compare({RD_DATA[8], RD_DATA[7:0]}, {pop_data1[8], pop_data1[7:0]});
+          compare( {{RD_DATA[17], RD_DATA[16:9]}}, {{pop_data2[8], pop_data2[7:0]}});
         end
     end
 
@@ -585,10 +1400,10 @@ task compare_pop_data();
 
        if (count_enteries_pop==1024) begin
 
-          compare({RD_DATA[32], RD_DATA[7:0]}, fwft_data1);
-          compare({RD_DATA[33], RD_DATA[15:8]}, fwft_data2);
-          compare({RD_DATA[34], RD_DATA[23:16]}, fwft_data3);
-          compare({RD_DATA[35], RD_DATA[31:24]}, fwft_data4);
+          compare({RD_DATA[8], RD_DATA[7:0]}, fwft_data1);
+          compare({RD_DATA[17], RD_DATA[16:9]}, fwft_data2);
+          compare({RD_DATA[26], RD_DATA[25:18]}, fwft_data3);
+          compare({RD_DATA[35], RD_DATA[34:27]}, fwft_data4);
 
         end
 
@@ -597,10 +1412,10 @@ task compare_pop_data();
             pop_data2= local_queue.pop_front();
             pop_data3= local_queue.pop_front();
             pop_data4= local_queue.pop_front();
-            compare({RD_DATA[32], RD_DATA[7:0]},  {pop_data1[8], pop_data1[7:0]});
-            compare({RD_DATA[33], RD_DATA[15:8]}, {pop_data2[8], pop_data2[7:0]});
-            compare({RD_DATA[34], RD_DATA[23:16]}, {pop_data3[8], pop_data3[7:0]});
-            compare({RD_DATA[35], RD_DATA[31:24]}, {pop_data4[8], pop_data4[7:0]});
+            compare({RD_DATA[8], RD_DATA[7:0]},  {pop_data1[8], pop_data1[7:0]});
+            compare({RD_DATA[17], RD_DATA[16:9]}, {pop_data2[8], pop_data2[7:0]});
+            compare({RD_DATA[26], RD_DATA[25:18]}, {pop_data3[8], pop_data3[7:0]});
+            compare({RD_DATA[35], RD_DATA[34:27]}, {pop_data4[8], pop_data4[7:0]});
         //  $display("count_enteries_pop %0d  RD_DATA %0h", count_enteries_pop, RD_DATA);
         end
     end
@@ -609,10 +1424,10 @@ task compare_pop_data();
 
         if (count_enteries_pop==1024) begin
 
-          compare({RD_DATA[32],RD_DATA[7:0]}, fwft_data1);
-          compare({RD_DATA[33],RD_DATA[15:8]}, fwft_data2);
-          compare({RD_DATA[34],RD_DATA[23:16]}, fwft_data3);
-          compare({RD_DATA[35],RD_DATA[31:24]}, fwft_data4);
+          compare({RD_DATA[8],RD_DATA[7:0]}, fwft_data1);
+          compare({RD_DATA[17],RD_DATA[16:9]}, fwft_data2);
+          compare({RD_DATA[26],RD_DATA[25:18]}, fwft_data3);
+          compare({RD_DATA[35],RD_DATA[34:27]}, fwft_data4);
 
         end
         else begin
@@ -622,10 +1437,10 @@ task compare_pop_data();
           pop_data3= local_queue.pop_front();
           pop_data4= local_queue.pop_front();
 
-          compare({RD_DATA[32], RD_DATA[7:0]}, {pop_data1[8], pop_data1[7:0]});
-          compare({RD_DATA[33], RD_DATA[15:8]}, {pop_data2[8], pop_data2[7:0]});
-          compare({RD_DATA[34], RD_DATA[23:16]}, {pop_data3[8], pop_data3[7:0]});
-          compare({RD_DATA[35], RD_DATA[31:24]}, {pop_data4[8], pop_data4[7:0]});
+          compare({RD_DATA[8], RD_DATA[7:0]}, {pop_data1[8], pop_data1[7:0]});
+          compare({RD_DATA[17], RD_DATA[16:9]}, {pop_data2[8], pop_data2[7:0]});
+          compare({RD_DATA[26], RD_DATA[25:18]}, {pop_data3[8], pop_data3[7:0]});
+          compare({RD_DATA[35], RD_DATA[34:27]}, {pop_data4[8], pop_data4[7:0]});
 
         //  $display("count_enteries_pop %0d  RD_DATA %0h", count_enteries_pop, RD_DATA);
         end
@@ -635,10 +1450,10 @@ task compare_pop_data();
 
        if (count_enteries_pop==1024) begin   // Last enter poped is same as first word fall through
 
-          compare({RD_DATA[32],RD_DATA[7:0]}, fwft_data1);
-          compare({RD_DATA[33],RD_DATA[15:8]}, fwft_data2);
-          compare({RD_DATA[34],RD_DATA[23:16]}, fwft_data3);
-          compare({RD_DATA[35],RD_DATA[31:24]}, fwft_data4);
+          compare({RD_DATA[8],RD_DATA[7:0]}, fwft_data1);
+          compare({RD_DATA[17],RD_DATA[16:9]}, fwft_data2);
+          compare({RD_DATA[26],RD_DATA[25:18]}, fwft_data3);
+          compare({RD_DATA[35],RD_DATA[34:27]}, fwft_data4);
 
         end
         else begin
@@ -646,10 +1461,10 @@ task compare_pop_data();
             pop_data2= local_queue.pop_front();
             pop_data3= local_queue.pop_front();
             pop_data4= local_queue.pop_front();
-          compare({RD_DATA[32], RD_DATA[7:0]}, {pop_data1[8], pop_data1[7:0]});
-          compare({RD_DATA[33], RD_DATA[15:8]}, {pop_data2[8], pop_data2[7:0]});
-          compare({RD_DATA[34], RD_DATA[23:16]}, {pop_data3[8], pop_data3[7:0]});
-          compare({RD_DATA[35], RD_DATA[31:24]}, {pop_data4[8], pop_data4[7:0]});
+          compare({RD_DATA[8], RD_DATA[7:0]}, {pop_data1[8], pop_data1[7:0]});
+          compare({RD_DATA[17], RD_DATA[16:9]}, {pop_data2[8], pop_data2[7:0]});
+          compare({RD_DATA[26], RD_DATA[25:18]}, {pop_data3[8], pop_data3[7:0]});
+          compare({RD_DATA[35], RD_DATA[34:27]}, {pop_data4[8], pop_data4[7:0]});
         end
     end
 
@@ -666,7 +1481,7 @@ task pop();
     // $display("i== %0d ; check RD_DATA %0h",i,RD_DATA);
     RD_EN=0;
 
-    count_enteries_pop=count_enteries_pop+1;
+    // count_enteries_pop=count_enteries_pop+1;
 
 
 endtask : pop
@@ -788,7 +1603,7 @@ module FIFO36K_tb();
   wire OVERFLOW; // FIFO overflow error flag
   wire UNDERFLOW;// FIFO underflow error flag
 
-  parameter DATA_WIDTH = 18; // FIFO data width (1-36)
+  parameter DATA_WIDTH = 36; // FIFO data width (1-36)
   parameter FIFO_TYPE = "SYNCHRONOUS"; // Synchronous or Asynchronous data transfer (SYNCHRONOUS/ASYNCHRONOUS)
   parameter [11:0] PROG_EMPTY_THRESH = 12'h004; // 12-bit Programmable empty depth
   parameter [11:0] PROG_FULL_THRESH = 12'h004;// 12-bit Programmable full depth
