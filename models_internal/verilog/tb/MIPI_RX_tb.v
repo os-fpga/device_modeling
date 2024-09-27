@@ -29,6 +29,7 @@ module MIPI_RX_tb;
   wire  LP_RX_DN;
 
   real delay;
+  integer error=0;
 
   MIPI_RX # (
     .WIDTH(WIDTH),
@@ -153,6 +154,22 @@ module MIPI_RX_tb;
         end
       end
     join_any
+    repeat(17)@(posedge CLK_IN);
+    if(HS_RX_DATA!=='ha)
+      error=error+1;
+    @(posedge CLK_IN);
+    if(HS_RX_DATA!=='hc)
+      error=error+1;
+    @(posedge CLK_IN);
+    if(HS_RX_DATA!=='hd)
+      error=error+1;
+
+    #2;
+    if(error===0)
+      $display("Test Passed");
+    else
+      $display("Test Failed");
+      
     #1000;
     $finish;
 
