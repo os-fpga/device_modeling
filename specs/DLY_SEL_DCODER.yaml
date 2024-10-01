@@ -61,7 +61,84 @@ ports:
    DLY_ADDR[4:0]:
      dir: input
      desc: Input Address
-   DLY_CNTRL[31:0][2:0]:
+   DLY0_CNTRL[2:0]:
      dir: output
      desc: Output Bus
      type: reg
+   DLY1_CNTRL[2:0]:
+     dir: output
+     desc: Output Bus
+     type: reg
+   DLY2_CNTRL[2:0]:
+     dir: output
+     desc: Output Bus
+     type: reg
+   DLY3_CNTRL[2:0]:
+     dir: output
+     desc: Output Bus
+     type: reg
+   DLY4_CNTRL[2:0]:
+     dir: output
+     desc: Output Bus
+     type: reg
+   DLY5_CNTRL[2:0]:
+     dir: output
+     desc: Output Bus
+     type: reg
+   DLY6_CNTRL[2:0]:
+     dir: output
+     desc: Output Bus
+     type: reg
+   DLY7_CNTRL[2:0]:
+     dir: output
+     desc: Output Bus
+     type: reg
+   DLY8_CNTRL[2:0]:
+     dir: output
+     desc: Output Bus
+     type: reg
+   DLY9_CNTRL[2:0]:
+     dir: output
+     desc: Output Bus
+     type: reg
+   DLY10_CNTRL[2:0]:
+     dir: output
+     desc: Output Bus
+     type: reg
+   DLY11_CNTRL[2:0]:
+     dir: output
+     desc: Output Bus
+     type: reg
+   DLY12_CNTRL[2:0]:
+     dir: output
+     desc: Output Bus
+     type: reg
+   DLY13_CNTRL[2:0]:
+     dir: output
+     desc: Output Bus
+     type: reg
+   DLY14_CNTRL[2:0]:
+     dir: output
+     desc: Output Bus
+     type: reg
+   DLY15_CNTRL[2:0]:
+     dir: output
+     desc: Output Bus
+     type: reg
+   DLY16_CNTRL[2:0]:
+     dir: output
+     desc: Output Bus
+     type: reg
+   DLY17_CNTRL[2:0]:
+     dir: output
+     desc: Output Bus
+     type: reg
+   DLY18_CNTRL[2:0]:
+     dir: output
+     desc: Output Bus
+     type: reg
+   DLY19_CNTRL[2:0]:
+     dir: output
+     desc: Output Bus
+     type: reg
+     

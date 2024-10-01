@@ -49,12 +49,70 @@ category: periphery
 timescale: 1ps/1ps
 
 ports:
-   DLY_TAP_VAL_ARRAY[19:0][5:0]:
+   DLY_TAP0_VAL[5:0]:
      dir: input
-     desc: 20 Delay Tap Value Input Ports
+     desc: Delay Tap Value Input Port
+   DLY_TAP1_VAL[5:0]:
+     dir: input
+     desc: Delay Tap Value Input Port
+   DLY_TAP2_VAL[5:0]:
+     dir: input
+     desc: Delay Tap Value Input Port
+   DLY_TAP3_VAL[5:0]:
+     dir: input
+     desc: Delay Tap Value Input Port
+   DLY_TAP4_VAL[5:0]:
+     dir: input
+     desc: Delay Tap Value Input Port
+   DLY_TAP5_VAL[5:0]:
+     dir: input
+     desc: Delay Tap Value Input Port
+   DLY_TAP6_VAL[5:0]:
+     dir: input
+     desc: Delay Tap Value Input Port
+   DLY_TAP7_VAL[5:0]:
+     dir: input
+     desc: Delay Tap Value Input Port
+   DLY_TAP8_VAL[5:0]:
+     dir: input
+     desc: Delay Tap Value Input Port
+   DLY_TAP9_VAL[5:0]:
+     dir: input
+     desc: Delay Tap Value Input Port
+   DLY_TAP10_VAL[5:0]:
+     dir: input
+     desc: Delay Tap Value Input Port
+   DLY_TAP11_VAL[5:0]:
+     dir: input
+     desc: Delay Tap Value Input Port
+   DLY_TAP12_VAL[5:0]:
+     dir: input
+     desc: Delay Tap Value Input Port
+   DLY_TAP13_VAL[5:0]:
+     dir: input
+     desc: Delay Tap Value Input Port
+   DLY_TAP14_VAL[5:0]:
+     dir: input
+     desc: Delay Tap Value Input Port
+   DLY_TAP15_VAL[5:0]:
+     dir: input
+     desc: Delay Tap Value Input Port
+   DLY_TAP16_VAL[5:0]:
+     dir: input
+     desc: Delay Tap Value Input Port
+   DLY_TAP17_VAL[5:0]:
+     dir: input
+     desc: Delay Tap Value Input Port
+   DLY_TAP18_VAL[5:0]:
+     dir: input
+     desc: Delay Tap Value Input Port
+   DLY_TAP19_VAL[5:0]:
+     dir: input
+     desc: Delay Tap Value Input Port
    DLY_ADDR[4:0]:
      dir: input
      desc: Input Address
    DLY_TAP_VALUE[5:0]:
      dir: output
      desc: Delay Tap Value Output Port
+     type: reg
