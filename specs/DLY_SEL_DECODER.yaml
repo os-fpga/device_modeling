@@ -43,7 +43,7 @@
 #          - <enum_name>
 #
 # primitive name should match the filename root.
-name: DLY_SEL_DCODER
+name: DLY_SEL_DECODER
 desc: Address Decoder
 category: periphery
 timescale: 1ps/1ps
