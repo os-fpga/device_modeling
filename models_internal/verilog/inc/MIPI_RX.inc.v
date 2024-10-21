@@ -49,10 +49,3 @@
   assign LP_RX_DP = rx_dp;
   assign LP_RX_DN = rx_dn;
 
-
-	always@(*)
-  begin
-    if(LP_EN && HS_EN)
-      $fatal(1,"\nERROR: MIPI RX instance %m LP_EN and HS_EN can't be hight at same time");
-  end
-
