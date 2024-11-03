@@ -3,8 +3,8 @@
 
 module FIFO36K_tb();
 
-  parameter DATA_READ_WIDTH = 36; // FIFO data width (1-36)
-  parameter DATA_WRITE_WIDTH = 9; // FIFO data width (1-36)
+  parameter DATA_READ_WIDTH = 9; // FIFO data width (1-36)
+  parameter DATA_WRITE_WIDTH = 36; // FIFO data width (1-36)
 
   reg RESET; // Asynchrnous FIFO reset
   reg WR_CLK; // Write clock
@@ -26,8 +26,8 @@ module FIFO36K_tb();
   reg do_underflow =0;
 
   parameter FIFO_TYPE = "ASYNCHRONOUS"; // Synchronous or Asynchronous data transfer (SYNCHRONOUS/ASYNCHRONOUS)
-  parameter [11:0] PROG_EMPTY_THRESH = 12'd1000; // 12-bit Programmable empty depth
-  parameter [11:0] PROG_FULL_THRESH = 12'd1000; // 12-bit Programmable full depth
+  parameter [11:0] PROG_EMPTY_THRESH = 12'd1022; // 12-bit Programmable empty depth
+  parameter [11:0] PROG_FULL_THRESH = 12'd1022; // 12-bit Programmable full depth
 
   // parameter DATA_WIDTH = 36;
   localparam DEPTH_WRITE = (DATA_WRITE_WIDTH <= 9) ? 4096 :
@@ -62,17 +62,17 @@ reg [8:0] pop_data4;
   integer wren_cnt=0;
   reg [8:0] local_queue [$];
   integer fifo_number;
-  bit debug=1;
+  bit debug=0;
 
   //clock//
   initial begin
     WR_CLK = 1'b0;
-    forever #23 WR_CLK = ~WR_CLK;
-end
+    forever #1233 WR_CLK = ~WR_CLK;
+  end
 
   initial begin
       RD_CLK = 1'b0;
-      forever #12 RD_CLK = ~RD_CLK;
+      forever #13 RD_CLK = ~RD_CLK;
   end
 
    FIFO36K #(
@@ -109,10 +109,17 @@ end
     $display("--------------------------------------------");
 
     check_flags();
+    repeat(5)@(posedge WR_CLK);
+    repeat(5)@(posedge RD_CLK);
+    check_flags();
+    repeat(5)@(posedge WR_CLK);
+    repeat(5)@(posedge RD_CLK);
+    check_flags();
+    // repeat(5)@(posedge WR_CLK);
+    // repeat(5)@(posedge RD_CLK);
     // check_flags();
-    // check_flags();
-    // check_flags();
-    // check_flags();
+    // repeat(5)@(posedge WR_CLK);
+    // repeat(5)@(posedge RD_CLK);
     // check_flags();
 
     test_status(error);
@@ -157,7 +164,20 @@ task wr_cycle_d();
 endtask
 
 ///////////////////////////////////////////////////////
-task PUSH_FLAGS1(input reg [5:0] in, input string str);
+task PUSH_FLAGS1_FULL(input reg [5:0] in, input string str);
+
+          fork 
+          begin
+           push();
+          end 
+          join;
+          if ({EMPTY,ALMOST_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,OVERFLOW} !== in) begin      
+                  begin  $display("%s", str); error=error+1; end
+          end
+          count_clk=0;
+endtask
+
+task PUSH_FLAGS1_EMPTY(input reg [5:0] in, input string str);
 
           fork 
           begin
@@ -175,7 +195,31 @@ task PUSH_FLAGS1(input reg [5:0] in, input string str);
           count_clk=0;
 endtask
 
-task POP_FLAGS(input reg [5:0] in, input string str);
+
+
+task POP_FLAGS_EMPTY(input reg [5:0] in, input string str);
+
+        fork 
+          begin
+           @(negedge RD_CLK);
+           RD_EN=1;
+           @(posedge RD_CLK);
+           count_clk=1;
+           @(negedge RD_CLK);
+           RD_EN=0;
+           count_enteries_pop=count_enteries_pop+1;
+           compare_pop_data();
+          end 
+          join;
+          if ({EMPTY,ALMOST_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,OVERFLOW} !== in) begin
+            begin $display("%s %0b",str, {EMPTY,ALMOST_EMPTY,UNDERFLOW,FULL,ALMOST_FULL,OVERFLOW}, $time); error=error+1; end
+          end
+           count_clk=0;
+endtask
+
+
+
+task POP_FLAGS_FULL(input reg [5:0] in, input string str);
 
         fork 
           begin
@@ -199,6 +243,8 @@ task POP_FLAGS(input reg [5:0] in, input string str);
           end
            count_clk=0;
 endtask
+
+
 
 task POP_FLAGS1(input reg [5:0] in, input string str);
         fork 
@@ -277,22 +323,22 @@ count_enteries_push=0;
 
 
       if(i==0) begin
-          PUSH_FLAGS1(6'b010_000, "ERROR PUSH: EMPTY SHOULD BE DE-ASSERTED");
+          PUSH_FLAGS1_EMPTY(6'b010_000, "ERROR PUSH: EMPTY SHOULD BE DE-ASSERTED");
       end
 
       if(i>=1 & i<DEPTH_WRITE- 2) begin
-        PUSH_FLAGS1(6'b000_000, "ERROR PUSH: ALMOST EMPTY SHOULD BE DE-ASSERTED ");
+        PUSH_FLAGS1_EMPTY(6'b000_000, "ERROR PUSH: ALMOST EMPTY SHOULD BE DE-ASSERTED ");
       end
 
       if(i==DEPTH_WRITE- 2) begin
-        PUSH_FLAGS1(6'b000_010,"ERROR PUSH: ONLY ALMOST FULL SHOULD BE ASSERTED");                    
+        PUSH_FLAGS1_FULL(6'b000_010,"ERROR PUSH: ONLY ALMOST FULL SHOULD BE ASSERTED");                    
       end
 
       if(i==DEPTH_WRITE- 1) begin
-          PUSH_FLAGS1(6'b000_100,"ERROR PUSH: ONLY FULL SHOULD BE ASSERTED");                  
+          PUSH_FLAGS1_FULL(6'b000_100,"ERROR PUSH: ONLY FULL SHOULD BE ASSERTED");                  
       end
 
-      if(i<PROG_EMPTY_THRESH) begin
+      if(i<PROG_EMPTY_THRESH-1) begin
         if (PROG_EMPTY !==1) begin $display("ERROR PUSH: PROG_EMPTY SHOULD BE ASSERTED"); error=error+1; end
       // $display("Check111111111");
       end
@@ -326,29 +372,29 @@ if(DATA_READ_WIDTH == DATA_WRITE_WIDTH) begin
         
         if(i==0) begin
           compare_pop_data();
-          POP_FLAGS(6'b000_010,"ERROR POP??: ONLY PROG FULL and ALMOST FULL SHOULD BE ASSERTED");
+          POP_FLAGS_FULL(6'b000_010,"ERROR POP??: ONLY PROG FULL and ALMOST FULL SHOULD BE ASSERTED");
         end
 
         if(i>=1 &  i< DEPTH_READ-2) begin
-          POP_FLAGS(6'b000_000,"ERROR POP: NO SHOULD BE ASSERTED");
+          POP_FLAGS_FULL(6'b000_000,"ERROR POP: NO SHOULD BE ASSERTED");
         end
 
         if(i==DEPTH_READ-2)  begin
-          if(DATA_READ_WIDTH ==9) begin
-          POP_FLAGS(6'b000_000,"ERROR?? POP: ONLY ALMOST EMPTY SHOULD BE ASSERTED");
-          end
-          else begin            
-          POP_FLAGS(6'b010_000,"ERROR POP: ONLY ALMOST EMPTY SHOULD BE ASSERTED");          
-          end          
+          // if(DATA_READ_WIDTH ==9) begin
+          // POP_FLAGS(6'b000_000,"ERROR?? POP: ONLY ALMOST EMPTY SHOULD BE ASSERTED");
+          // end
+          // else begin            
+          POP_FLAGS_EMPTY(6'b010_000,"ERROR POP: ONLY ALMOST EMPTY SHOULD BE ASSERTED");          
+          // end          
         end
 
         if(i==DEPTH_READ-1)  begin
-          POP_FLAGS(6'b100_000,"ERROR POP: ONLY ALMOST EMPTY SHOULD BE ASSERTED");            
+          POP_FLAGS_EMPTY(6'b100_000,"ERROR POP: ONLY ALMOST EMPTY SHOULD BE ASSERTED");            
         end
 
 //
-      if(i<PROG_FULL_THRESH) begin
-        if (PROG_FULL !==1) begin $display("ERROR PUSH: PROG_FULL SHOULD BE ASSERTED"); error=error+1; end
+      if(count_enteries_pop<PROG_FULL_THRESH-1) begin
+        if (PROG_FULL !==1) begin $display("ERROR POP: PROG_FULL SHOULD BE ASSERTED"); error=error+1; end
       // $display("Check33333333");
       end
 
@@ -357,7 +403,6 @@ if(DATA_READ_WIDTH == DATA_WRITE_WIDTH) begin
       // $display("Check4444444");
       end
 //
-      
       if(do_underflow) begin
           @(negedge RD_CLK);
            RD_EN=1;
@@ -368,6 +413,7 @@ if(DATA_READ_WIDTH == DATA_WRITE_WIDTH) begin
           count_enteries_pop=count_enteries_pop+1;
           compare_pop_data();
       end
+
   end
 end
 
@@ -399,25 +445,25 @@ for (int i=0; i<DEPTH_WRITE; i++) begin  //DEPTH_WRITE
   // $display("Check111111");
   end
 
-  if(i>=DEPTH_WRITE-PROG_FULL_THRESH/WgtR_Ratio) begin
+  if(i>DEPTH_WRITE-PROG_FULL_THRESH) begin
     if (PROG_FULL !==1) begin $display("ERROR PUSH: PROG_FULL NOT ASSERTED"); error=error+1; end
   // $display("Check222222");
   end
 
   if(i==0) begin
-      PUSH_FLAGS1(6'b000_000, "ERROR PUSH: ALL1 SHOULD BE DE-ASSERTED");
+      PUSH_FLAGS1_EMPTY(6'b000_000, "ERROR PUSH: ALL1 SHOULD BE DE-ASSERTED");
   end
   
   if(i>0 & i<DEPTH_WRITE-2) begin
-    PUSH_FLAGS1(6'b000_000, "ERROR PUSH: ALL2 SHOULD BE DE-ASSERTED");
+    PUSH_FLAGS1_EMPTY(6'b000_000, "ERROR PUSH: ALL2 SHOULD BE DE-ASSERTED");
   end
 
   if(i==DEPTH_WRITE-2) begin
-    PUSH_FLAGS1(6'b000_010, "ERROR PUSH: ONLY ALMOST FULL ASSERTED");
+    PUSH_FLAGS1_FULL(6'b000_010, "ERROR PUSH: ONLY ALMOST FULL ASSERTED");
   end
 
   if(i==DEPTH_WRITE-1) begin
-    PUSH_FLAGS1(6'b000_100, "ERROR PUSH: ONLY FULL SHOULD BE ASSERTED");
+    PUSH_FLAGS1_FULL(6'b000_100, "ERROR PUSH: ONLY FULL SHOULD BE ASSERTED");
   end
 
   if(do_overflow) begin
@@ -449,7 +495,7 @@ for (int i=0; i<DEPTH_READ; i++) begin
         
         else if(i==WgtR_Ratio-1) begin
           compare_pop_data();
-          POP_FLAGS1(6'b000_010, "ERROR POP: ONLY ALMOST FULL SHOULD BE ASSERTED");
+          POP_FLAGS_FULL(6'b000_010, "ERROR POP: ONLY ALMOST FULL SHOULD BE ASSERTED");
         end
         
         else if(i>WgtR_Ratio-1 & i<DEPTH_READ-2) begin
@@ -459,19 +505,19 @@ for (int i=0; i<DEPTH_READ; i++) begin
         end
         
         else if(i==DEPTH_READ-2)  begin
-          if(DATA_READ_WIDTH==9) begin
-            POP_FLAGS1(6'b000_000, "ERROR POP: ALL SHOULD BE DE-ASSERTED");
-          end
-          else begin
-            POP_FLAGS1(6'b010_000, "ERROR POP: ONLY ALMOST EMPTY SHOULD BE ASSERTED");          
-          end
+          // if(DATA_READ_WIDTH==9) begin
+          //   POP_FLAGS(6'b000_000, "ERROR POP: ALL SHOULD BE DE-ASSERTED");
+          // end
+          // else begin
+            POP_FLAGS_EMPTY(6'b010_000, "ERROR POP: ONLY ALMOST EMPTY SHOULD BE ASSERTED");          
+          // end
         end
         
         else if(i==DEPTH_READ-1) begin
-          POP_FLAGS1(6'b100_000, "ERROR POP: ALL SHOULD BE DE-ASSERTED");
+          POP_FLAGS_EMPTY(6'b100_000, "ERROR POP: ALL SHOULD BE DE-ASSERTED");
         end
         else begin
-          pop();
+          // pop();
         end
 //
 
@@ -521,38 +567,40 @@ end
 
 if(DATA_WRITE_WIDTH < DATA_READ_WIDTH) begin
 
+count_enteries_push=0;
+local_queue.delete();
+
 
   for(int i=0 ; i<DEPTH_WRITE; i++) begin
-  
 
     if(i<RgtW_Ratio-1) begin
       push();
       count_clk=0;
     end
     else if(i==RgtW_Ratio-1) begin
-      PUSH_FLAGS1(6'b010_000,"ERROR PUSH: ONLY ALMOST EMPTY SHOULD BE ASSERTED");
+      PUSH_FLAGS1_EMPTY(6'b010_000,"ERROR PUSH: ONLY ALMOST EMPTY SHOULD BE ASSERTED");
     end
     else if(i>RgtW_Ratio & i<DEPTH_WRITE-2) begin
       push();
       count_clk=0;    
     end
     else if (i==DEPTH_WRITE-2) begin
-      PUSH_FLAGS1(6'b000_010,"ERROR PUSH: ONLY ALMOST EMPTY SHOULD BE ASSERTED");
+      PUSH_FLAGS1_FULL(6'b000_010,"ERROR PUSH: ONLY ALMOST EMPTY SHOULD BE ASSERTED");
     end
     else if (i==DEPTH_WRITE-1) begin
-      PUSH_FLAGS1(6'b000_100,"ERROR PUSH: ONLY ALMOST EMPTY SHOULD BE ASSERTED");
+      PUSH_FLAGS1_FULL(6'b000_100,"ERROR PUSH: ONLY ALMOST EMPTY SHOULD BE ASSERTED");
     end
     else begin
       push();
       count_clk=0;    
     end
 
-      if(i>DEPTH_WRITE-PROG_FULL_THRESH) begin
-        if (PROG_FULL !==1) begin $display("ERROR PUSH: PROG_EMPTY NOT ASSERTED"); error=error+1; end
+      if(i>DEPTH_WRITE-PROG_FULL_THRESH-1) begin
+        if (PROG_FULL !==1) begin $display("ERROR PUSH: PROG_EMPTY NOT ASSERTED ", $time); error=error+1; end
         // $display("Check11111");
       end
 
-      if(i<PROG_EMPTY_THRESH) begin
+      if(i*RgtW_Ratio<PROG_EMPTY_THRESH) begin
         if (PROG_EMPTY !==1) begin $display("ERROR PUSH: PROG_FULL NOT ASSERTED"); error=error+1; end
         // $display("Check2222");
       end
@@ -587,28 +635,28 @@ count_enteries_pop=0;
 
   if(i==0) begin
       compare_pop_data();
-      POP_FLAGS1(6'b000_000, "ERROR POP: ALL1 SHOULD BE DE-ASSERTED");
+      POP_FLAGS_FULL(6'b000_000, "ERROR POP: ALL1 SHOULD BE DE-ASSERTED");
   end
   
   if(i>0 & i<DEPTH_READ-2) begin
-    POP_FLAGS1(6'b000_000, "ERROR POP: ALL2 SHOULD BE DE-ASSERTED");
+    POP_FLAGS_FULL(6'b000_000, "ERROR POP: ALL2 SHOULD BE DE-ASSERTED");
   end
   if(i==DEPTH_READ-2) begin
-    POP_FLAGS1(6'b010_000, "ERROR PUSH: ONLY ALMOST FULL ASSERTED");
+    POP_FLAGS_EMPTY(6'b010_000, "ERROR POP: ONLY ALMOST FULL ASSERTED");
   end
 
   if(i==DEPTH_WRITE-1) begin
-    PUSH_FLAGS1(6'b100_000, "ERROR PUSH: ONLY FULL SHOULD BE ASSERTED");
+    POP_FLAGS_EMPTY(6'b100_000, "ERROR POP: ONLY FULL SHOULD BE ASSERTED");
   end
 
-  if(i*RgtW_Ratio<PROG_FULL_THRESH) begin
-      if (PROG_FULL !==1) begin $display("ERROR PUSH: PROG_EMPTY NOT ASSERTED"); error=error+1; end
-  $display("Check3333");
+  if((i+1)*RgtW_Ratio< PROG_FULL_THRESH) begin
+      if (PROG_FULL !==1) begin $display("ERROR POP: PROG_FULL NOT ASSERTED", $time); error=error+1; end
+  // $display("Check3333");
   end
 
   if(i>=DEPTH_READ-PROG_EMPTY_THRESH/RgtW_Ratio) begin
-    if (PROG_EMPTY !==1) begin $display("ERROR PUSH: PROG_FULL NOT ASSERTED"); error=error+1; end
-  $display("Check44444");
+    if (PROG_EMPTY !==1) begin $display("ERROR POP: PROG_EMPTY NOT ASSERTED"); error=error+1; end
+  // $display("Check44444");
   end
   end
 end
@@ -667,13 +715,13 @@ task push();
     
         if (count_enteries_push==0 || count_enteries_push==4096) begin
        
-           fwft_data1 = WR_DATA;
+           fwft_data1 = {WR_DATA[8],WR_DATA[7:0]};
 
         end
 
         else if (count_enteries_push==1 || count_enteries_push==4097) begin
 
-           fwft_data2 = WR_DATA;
+           fwft_data2 ={WR_DATA[8],WR_DATA[7:0]};
         
         end    
             local_queue.push_back({WR_DATA[8], WR_DATA[7:0]});
@@ -831,7 +879,7 @@ task compare_pop_data();
         end
     end
   
-      if(DATA_WRITE_WIDTH==18) begin
+    if(DATA_WRITE_WIDTH==18) begin
 
        if (count_enteries_pop==2048) begin
           pop_data1= local_queue.pop_front();
@@ -1046,8 +1094,8 @@ module FIFO36K_tb();
   reg WR_EN; // Write enable
   reg RD_EN; // Read enable
 
-  parameter DATA_WIDTH_WRITE = 9; // FIFO data width (1-36)
-  parameter DATA_WIDTH_READ = 36;   // FIFO data width (1-36)
+  parameter DATA_WIDTH_WRITE = 36; // FIFO data width (1-36)
+  parameter DATA_WIDTH_READ = 9;   // FIFO data width (1-36)
 
   reg [DATA_WIDTH_WRITE-1:0] WR_DATA; // Write data
   wire [DATA_WIDTH_READ-1:0] RD_DATA; // Read data
@@ -1061,8 +1109,10 @@ module FIFO36K_tb();
   wire UNDERFLOW;// FIFO underflow error flag
 
   parameter FIFO_TYPE = "SYNCHRONOUS"; // Synchronous or Asynchronous data transfer (SYNCHRONOUS/ASYNCHRONOUS)
-  parameter [11:0] PROG_EMPTY_THRESH = 12'h004; // 12-bit Programmable empty depth
-  parameter [11:0] PROG_FULL_THRESH = 12'h004;// 12-bit Programmable full depth
+  parameter [11:0] PROG_EMPTY_THRESH = 12'd4094; // 12-bit Programmable empty depth
+  parameter [11:0] PROG_FULL_THRESH = 12'd1022;// 12-bit Programmable full depth
+
+  // 12 bit max value is 4096 , 
 
   // Testbench Variables
   parameter R_CLOCK_PERIOD = 20;
@@ -1098,7 +1148,7 @@ module FIFO36K_tb();
   //clock//
   initial begin
     WR_CLK = 1'b0;
-    forever #20 WR_CLK = ~WR_CLK;
+    forever #1000 WR_CLK = ~WR_CLK;
 end
 
 // initial begin
@@ -1108,7 +1158,7 @@ end
 
   initial begin
       RD_CLK = 1'b0;
-      forever #20 RD_CLK = ~RD_CLK;
+      forever #1000 RD_CLK = ~RD_CLK;
   end
 
    FIFO36K #(
