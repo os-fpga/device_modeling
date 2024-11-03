@@ -65,6 +65,19 @@ if ( FIFO_TYPE == "SYNCHRONOUS"  & (DATA_WRITE_WIDTH==DATA_READ_WIDTH))  begin: 
   reg underrun_status = 0;
   reg overrun_status = 0;
 
+always @(fifo_depth) begin    
+    if (PROG_FULL_THRESH>fifo_depth-2) begin
+        $fatal(1,"\n ERROR: PROG_FULL_THRESH is GREATER THAN fifo_depth-2 \n" );             
+     end
+end
+
+always @(fifo_depth) begin    
+    if (PROG_EMPTY_THRESH>fifo_depth-2) begin
+        $fatal(1,"\n ERROR: PROG_FULL_THRESH is GREATER THAN fifo_depth-2 \n" );             
+     end
+end
+
+
   TDP_RAM36K #(
     .INIT({32768{1'b0}}), // Initial Contents of memory
     .INIT_PARITY({2048{1'b0}}), // Initial Contents of memory
@@ -154,6 +167,7 @@ if ( FIFO_TYPE == "SYNCHRONOUS"  & (DATA_WRITE_WIDTH==DATA_READ_WIDTH))  begin: 
           ALMOST_EMPTY <= 1'b0;
           ALMOST_FULL  <= 1'b0;
           PROG_EMPTY   <= 1'b1;
+          PROG_FULL_TEMP    <= 1'b0;
           PROG_FULL    <= 1'b0;
           OVERFLOW     <= 1'b0;
           UNDERFLOW    <= 1'b0;
@@ -170,7 +184,14 @@ if ( FIFO_TYPE == "SYNCHRONOUS"  & (DATA_WRITE_WIDTH==DATA_READ_WIDTH))  begin: 
           ALMOST_EMPTY <= (((number_entries==1) && !(RD_EN && !WR_EN)) ||  ((RD_EN && !WR_EN) && (number_entries==2)));
           ALMOST_FULL  <= (((number_entries==(fifo_depth-1)) && !(!RD_EN && WR_EN)) ||  ((!RD_EN && WR_EN) && (number_entries==fifo_depth-2)));
           PROG_EMPTY   <= ((number_entries) < (PROG_EMPTY_THRESH)) || ((RD_EN && !WR_EN) && ((number_entries) <= PROG_EMPTY_THRESH) );
-          PROG_FULL    <= ((fifo_depth-number_entries) < (PROG_FULL_THRESH)) || ((!RD_EN && WR_EN) && ((fifo_depth-number_entries) <= PROG_FULL_THRESH) );
+          if(PROG_FULL) begin
+            PROG_FULL <= PROG_FULL_TEMP;
+          end
+          else begin
+            PROG_FULL    <= ((fifo_depth-number_entries) < (PROG_FULL_THRESH)) || ((!RD_EN && WR_EN) && ((fifo_depth-number_entries) <= PROG_FULL_THRESH) );
+          end
+            PROG_FULL_TEMP    <= ((fifo_depth-number_entries) < (PROG_FULL_THRESH)) || ((!RD_EN && WR_EN) && ((fifo_depth-number_entries) <= PROG_FULL_THRESH) );
+
           UNDERFLOW    <= (EMPTY && RD_EN) || (underrun_status==1);
           OVERFLOW     <= (FULL && WR_EN) || (overrun_status==1);
           if (EMPTY && WR_EN && !fwft) begin
@@ -191,6 +212,7 @@ if ( FIFO_TYPE == "SYNCHRONOUS"  & (DATA_WRITE_WIDTH==DATA_READ_WIDTH))  begin: 
           @(RD_CLK);
           $display("\nWarning: FIFO36K instance %m RD_CLK should be tied to ground when FIFO36K is configured as FIFO_TYPE=SYNCHRONOUS.");
         end
+
 
 end  // SYNCHRONOUS LOGIC 
 
@@ -257,6 +279,19 @@ else  if ( (FIFO_TYPE == "SYNCHRONOUS"  & (DATA_WRITE_WIDTH !== DATA_READ_WIDTH)
 
   wire [W_PTR_WIDTH:0] b_wptr_sync, b_wptr_w, b_wptr_sync_for_a;
   wire [R_PTR_WIDTH:0] b_rptr_sync, b_rptr_w, b_rptr_w1, b_rptr_sync_for_a;
+
+always @(fifo_depth_write) begin    
+    if (PROG_FULL_THRESH>fifo_depth_write-2) begin
+        $fatal(1,"\n ERROR: PROG_FULL_THRESH is GREATER THAN fifo_depth_write-2 \n" );             
+     end
+end
+
+always @(fifo_depth_read) begin    
+    if (PROG_EMPTY_THRESH>fifo_depth_read-2) begin
+        $fatal(1,"\n ERROR: PROG_FULL_THRESH is GREATER THAN fifo_depth_write-2 \n" );             
+     end
+end
+
 
 
   TDP_RAM36K #(
@@ -559,6 +594,15 @@ always @(*) begin
      end
 end
 
+always @(*) begin    
+    if (PROG_FULL_THRESH > fifo_depth_write-2) begin
+        @(posedge WR_CLK) begin
+        $fatal(1,"\n Error: PROG_FULL_THRESH SHOULD BE LESS THAN (fifo_depth_write-2) \n", UNDERFLOW );             
+        end 
+     end
+end
+
+
 //
 
 
@@ -670,6 +714,20 @@ wire [W_PTR_WIDTH:0] b_wptr_sync, b_wptr_w, b_wptr_sync_for_a;
 wire [R_PTR_WIDTH:0] b_rptr_sync, b_rptr_w, b_rptr_w1, b_rptr_sync_for_a;
 
 
+always @(fifo_depth_write) begin    
+    if (PROG_FULL_THRESH>fifo_depth_write-2) begin
+        $fatal(1,"\n ERROR: PROG_FULL_THRESH is GREATER THAN fifo_depth_write-2 \n" );             
+     end
+end
+
+always @(fifo_depth_read) begin    
+    if (PROG_EMPTY_THRESH>fifo_depth_read-2) begin
+        $fatal(1,"\n ERROR: PROG_FULL_THRESH is GREATER THAN fifo_depth_write-2 \n" );             
+     end
+end
+
+
+
   TDP_RAM36K #(
     .INIT({32768{1'b0}}), // Initial Contents of memory
     .INIT_PARITY({2048{1'b0}}), // Initial Contents of memory
@@ -681,7 +739,7 @@ wire [R_PTR_WIDTH:0] b_rptr_sync, b_rptr_w, b_rptr_w1, b_rptr_sync_for_a;
     .WEN_A(WR_EN ), // Write-enable port A
     .WEN_B(1'b0), // Write-enable port B
     .REN_A(1'b0), // Read-enable port A
-    .REN_B(RD_EN || fwft), // Read-enable port B
+    .REN_B(RD_EN), // Read-enable port B
     .CLK_A(WR_CLK), // Clock port A
     .CLK_B(ram_clk_b), // Clock port B 
     .BE_A(4'hf), // Byte-write enable port A
@@ -742,17 +800,18 @@ wire [R_PTR_WIDTH:0] b_rptr_sync, b_rptr_w, b_rptr_w1, b_rptr_sync_for_a;
   assign b_wptr_sync = d_out1;
   assign b_wptr_sync_for_a = q1_a;
 
-  always@(posedge RD_CLK) begin
-    if(RESET) begin
-      q1 <= 0;
+always @(*) begin
+if(RESET) begin
+       q1 <= 0;
       d_out1 <= 0;
-      q1_a <=0;
-    end
-    else begin
+      q1_a <=0;  
+end
+
+end
+  always@(posedge RD_CLK) begin
       q1 <= b_wptr_w;
       d_out1 <= q1;
       q1_a <= d_out1;
-    end
   end
 
 /*-------------------------------------------------------------------*/
@@ -764,18 +823,18 @@ reg [R_PTR_WIDTH:0] q2, q2_a, d_out2;
 assign b_rptr_sync = d_out2;
 assign b_rptr_sync_for_a = q2_a;
 
-  always@(posedge WR_CLK) begin
-    if(RESET) begin
+always @(*) begin
+  if(RESET) begin
       q2 <= 0;
       d_out2 <= 0;
       q2_a <=0;
-    end
-    else begin
+  end
+end
 
+  always@(posedge WR_CLK) begin
       q2 <= b_rptr_w;
       d_out2 <= q2;
       q2_a <= d_out2;
-    end
   end
 
 /*-------------------------------------------------------------------*/
@@ -1126,7 +1185,8 @@ end
 
 end
 
-endgenerate initial begin
+endgenerate
+ initial begin
     case(DATA_WRITE_WIDTH)
       9 ,
       18 ,
