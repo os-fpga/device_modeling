@@ -3,8 +3,8 @@
 
 module FIFO36K_tb();
 
-  parameter DATA_READ_WIDTH = 9; // FIFO data width (1-36)
-  parameter DATA_WRITE_WIDTH = 36; // FIFO data width (1-36)
+  parameter DATA_READ_WIDTH =9; // FIFO data width (1-36)
+  parameter DATA_WRITE_WIDTH = 9; // FIFO data width (1-36)
 
   reg RESET; // Asynchrnous FIFO reset
   reg WR_CLK; // Write clock
@@ -26,8 +26,8 @@ module FIFO36K_tb();
   reg do_underflow =0;
 
   parameter FIFO_TYPE = "ASYNCHRONOUS"; // Synchronous or Asynchronous data transfer (SYNCHRONOUS/ASYNCHRONOUS)
-  parameter [11:0] PROG_EMPTY_THRESH = 12'd1022; // 12-bit Programmable empty depth
-  parameter [11:0] PROG_FULL_THRESH = 12'd1022; // 12-bit Programmable full depth
+  parameter [11:0] PROG_EMPTY_THRESH = 12'd1020; // 12-bit Programmable empty depth
+  parameter [11:0] PROG_FULL_THRESH = 12'd1020; // 12-bit Programmable full depth
 
   // parameter DATA_WIDTH = 36;
   localparam DEPTH_WRITE = (DATA_WRITE_WIDTH <= 9) ? 4096 :
@@ -67,12 +67,12 @@ reg [8:0] pop_data4;
   //clock//
   initial begin
     WR_CLK = 1'b0;
-    forever #1233 WR_CLK = ~WR_CLK;
+    forever #1 WR_CLK = ~WR_CLK;
   end
 
   initial begin
       RD_CLK = 1'b0;
-      forever #13 RD_CLK = ~RD_CLK;
+      forever #2 RD_CLK = ~RD_CLK;
   end
 
    FIFO36K #(
@@ -1094,8 +1094,8 @@ module FIFO36K_tb();
   reg WR_EN; // Write enable
   reg RD_EN; // Read enable
 
-  parameter DATA_WIDTH_WRITE = 36; // FIFO data width (1-36)
-  parameter DATA_WIDTH_READ = 9;   // FIFO data width (1-36)
+  parameter DATA_WIDTH_WRITE = 9; // FIFO data width (1-36)
+  parameter DATA_WIDTH_READ = 36;   // FIFO data width (1-36)
 
   reg [DATA_WIDTH_WRITE-1:0] WR_DATA; // Write data
   wire [DATA_WIDTH_READ-1:0] RD_DATA; // Read data
@@ -1109,7 +1109,7 @@ module FIFO36K_tb();
   wire UNDERFLOW;// FIFO underflow error flag
 
   parameter FIFO_TYPE = "SYNCHRONOUS"; // Synchronous or Asynchronous data transfer (SYNCHRONOUS/ASYNCHRONOUS)
-  parameter [11:0] PROG_EMPTY_THRESH = 12'd4094; // 12-bit Programmable empty depth
+  parameter [11:0] PROG_EMPTY_THRESH = 12'd1000; // 12-bit Programmable empty depth
   parameter [11:0] PROG_FULL_THRESH = 12'd1022;// 12-bit Programmable full depth
 
   // 12 bit max value is 4096 , 
@@ -1578,7 +1578,7 @@ if(DATA_WIDTH_WRITE > DATA_WIDTH_READ) begin
         begin $display("ERROR: PROG FULL SHOULD BE ASSERTED"); error=error+1; end
     end
 
-    if(i>DEPTH_READ-PROG_FULL_THRESH) begin
+    if(i>DEPTH_READ-PROG_EMPTY_THRESH) begin
           if (PROG_EMPTY !== 1)
         begin $display("ERROR: PROG EMPTY SHOULD BE ASSERTED"); error=error+1; end
     end
