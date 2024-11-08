@@ -31,6 +31,7 @@ module FIFO36K #(
   output reg UNDERFLOW = 1'b0 // FIFO underflow error flag
 );
 
+
 generate
 
 if ( FIFO_TYPE == "SYNCHRONOUS"  & (DATA_WRITE_WIDTH==DATA_READ_WIDTH))  begin: SYNCHRONOUS
@@ -157,6 +158,12 @@ end
           number_entries <= number_entries - 1;
           underrun_status = 0;
         end
+      
+      // always @(posedge WR_CLK) begin
+      //   if(PROG_FULL) begin
+      //     PROG_FULL <= PROG_FULL_TEMP; 
+      //   end
+      //
 
       always @(posedge RESET, posedge WR_CLK)
         if (RESET) begin
@@ -288,7 +295,7 @@ end
 
 always @(fifo_depth_read) begin    
     if (PROG_EMPTY_THRESH>fifo_depth_read-2) begin
-        $fatal(1,"\n ERROR: PROG_FULL_THRESH is GREATER THAN fifo_depth_write-2 \n" );             
+        $fatal(1,"\n ERROR: PROG_EMPTY_THRESH is GREATER THAN fifo_depth_write-2 \n" );             
      end
 end
 
@@ -698,6 +705,8 @@ localparam DATA_WIDTH_READ = DATA_READ_WIDTH;
   reg [fifo_addr_width_r-1:0] fifo_rd_addr = {fifo_addr_width_r{1'b0}};
 
   reg [DATA_WIDTH_READ-1:0] fwft_data = {DATA_WIDTH_READ{1'b0}};
+  reg [DATA_WIDTH_READ-1:0] fwft_data_temp ={DATA_WIDTH_READ{1'b0}};
+
 
   wire [31:0] ram_wr_data;
   wire [3:0] ram_wr_parity;
@@ -1014,113 +1023,124 @@ assign p_empty = (diff_ptr1_for_a ==PROG_EMPTY_THRESH-1 || diff_ptr1_for_a <=PRO
 
 /*------------- Adding logic of First word fall through ------------*/
   always @ (posedge RD_CLK) begin
-        if(RD_EN & fwft) begin
-            fwft <=0;
+        if(RD_EN) begin
+            fwft =0;
         end
   end
+
+  always @(posedge WR_CLK) begin
+      if(RESET) begin
+        fwft =0;
+      end
+      else if (EMPTY==1 & WR_EN==1) begin
+        fwft = 1 ;
+      end
+      else begin
+        fwft = fwft;
+      end
+  end
+
+always @(*) begin
+  if(fwft) begin
+    fwft_data <= fwft_data_temp;
+  end
+end
 
 
     always@(posedge WR_CLK) begin
 // -1
         if (DATA_WIDTH_WRITE >= DATA_WIDTH_READ) begin
-              fwft <= (EMPTY && WR_EN && !fwft)? 1 : fwft;
-            if (EMPTY && WR_EN && !fwft) begin
-              if (DATA_WIDTH_WRITE==DATA_WIDTH_READ) begin
-                fwft_data <= WR_DATA;
+        
+            if (EMPTY && WR_EN && !RESET) begin
+
+              if (DATA_WIDTH_WRITE==36 && DATA_WIDTH_READ==36) begin
+                if(b_wptr_next==1 || b_wptr_next==1025) begin
+                  fwft_data_temp <= WR_DATA;
+                end
               end
+
+              else if (DATA_WIDTH_WRITE==18 && DATA_WIDTH_READ==18) begin
+                if(b_wptr_next==1 || b_wptr_next==2049) begin
+                  fwft_data_temp <= WR_DATA;
+                end
+              end
+              if (DATA_WIDTH_WRITE==9 && DATA_WIDTH_READ==9) begin
+                if(b_wptr_next==1 || b_wptr_next==4097) begin
+                  fwft_data_temp <= WR_DATA;
+                end
+              end
+
               else if (DATA_WIDTH_WRITE==36 && DATA_WIDTH_READ==9) begin
-                fwft_data <= {{WR_DATA[8]},{WR_DATA[7:0]}} ;  // DEVELOP LOGIC FOR OTHER WIDTH AS WELL
+                if(b_wptr_next==1 || b_wptr_next==1025) begin
+                fwft_data_temp <= {{WR_DATA[8]},{WR_DATA[7:0]}} ;  // DEVELOP LOGIC FOR OTHER WIDTH AS WELL
+                end 
               end
               else if (DATA_WIDTH_WRITE==36 && DATA_WIDTH_READ==18) begin
-                fwft_data <= {{WR_DATA[17]},{WR_DATA[16:9]}, {WR_DATA[8]}, {WR_DATA[7:0]}} ;  // DEVELOP LOGIC FOR OTHER WIDTH AS WELL
+                if(b_wptr_next==1 || b_wptr_next==1025) begin
+                  fwft_data_temp <= {{WR_DATA[17]},{WR_DATA[16:9]}, {WR_DATA[8]}, {WR_DATA[7:0]}} ;  // DEVELOP LOGIC FOR OTHER WIDTH AS WELL
+                end
               end
               else if (DATA_WIDTH_WRITE==18 && DATA_WIDTH_READ==9) begin
-                fwft_data <= {{WR_DATA[8]},{WR_DATA[7:0]}} ;  // DEVELOP LOGIC FOR OTHER WIDTH AS WELL
+                if(b_wptr_next==1 || b_wptr_next==2049) begin
+                  fwft_data_temp <= {{WR_DATA[8]},{WR_DATA[7:0]}} ;  // DEVELOP LOGIC FOR OTHER WIDTH AS WELL
+                end
               end
 
             end
         end
 // -2          
         if (DATA_WIDTH_WRITE == 9 && DATA_WIDTH_READ==18) begin
-
-              // if(b_wptr_next==2 || b_wptr_next==4098 || b_wptr_next==2049) begin
-              // fwft=1;
-              // end   
-              // else begin
-              // fwft=fwft;
-              // end  
-
-              fwft <= (EMPTY && WR_EN && !fwft)? 1 : fwft;
+            if (EMPTY && WR_EN && !RESET) begin
 
               if(b_wptr_next==1 || b_wptr_next==4097 ) begin
-                fwft_data [7:0] <= WR_DATA[7:0] ;
-                fwft_data [8] <= WR_DATA[8] ;
+                fwft_data_temp [7:0] <= WR_DATA[7:0] ;
+                fwft_data_temp [8] <= WR_DATA[8] ;
               end
               if(b_wptr_next==2 || b_wptr_next==4098 ) begin
-                fwft_data [16:9] <= WR_DATA[7:0];
-                fwft_data [17] <= WR_DATA[8];
+                fwft_data_temp [16:9] <= WR_DATA[7:0];
+                fwft_data_temp [17] <= WR_DATA[8];
               end     
+
+           end
+
         end
 // -3 
         if (DATA_WIDTH_WRITE == 9 && DATA_WIDTH_READ==36) begin
 
-              // if(b_wptr_next==4 || b_wptr_next==8196 || b_wptr_next==4100) begin
-              // fwft=1;
-              // end   
-              // else begin
-              // fwft=fwft;
-              // end  
-
-              fwft <= (EMPTY && WR_EN && !fwft)? 1 : fwft;
+            if (EMPTY && WR_EN && !RESET) begin
 
               if(b_wptr_next==1 || b_wptr_next==4097) begin
-                fwft_data [7:0] <= WR_DATA[7:0];
-                fwft_data [8] <= WR_DATA[8];
+                fwft_data_temp [7:0] <= WR_DATA[7:0];
+                fwft_data_temp [8] <= WR_DATA[8];
               end
               if(b_wptr_next==2 || b_wptr_next==4098) begin
-                fwft_data [16:9] <= WR_DATA[7:0];
-                fwft_data [17] <= WR_DATA[8];
+                fwft_data_temp [16:9] <= WR_DATA[7:0];
+                fwft_data_temp [17] <= WR_DATA[8];
               end     
               if(b_wptr_next==3 || b_wptr_next==4099) begin
-                fwft_data [25:18] <= WR_DATA[7:0] ;
-                fwft_data [26] <= WR_DATA[8];
+                fwft_data_temp [25:18] <= WR_DATA[7:0] ;
+                fwft_data_temp [26] <= WR_DATA[8];
               end
               if(b_wptr_next==4 || b_wptr_next==4100) begin
-                fwft_data [34:27] <= WR_DATA[7:0] ;
-                fwft_data [35] <= WR_DATA[8];
-              end   
+                fwft_data_temp [34:27] <= WR_DATA[7:0] ;
+                fwft_data_temp [35] <= WR_DATA[8];
+              end  
+              // fwft <=1; 
+            end
 
         end
 // -4 
         if (DATA_WIDTH_WRITE == 18 && DATA_WIDTH_READ==36) begin
 
-              // if(b_wptr_next==2 || b_wptr_next==4098 || b_wptr_next==2049) begin
-              // fwft=1;
-              // end   
-              // else begin
-              // fwft=fwft;
-              // end  
-              
-              fwft <= (EMPTY && WR_EN && !fwft)? 1 : fwft;
-
+            if (EMPTY && WR_EN && !RESET) begin
               if(b_wptr_next==1 || b_wptr_next==4097  ) begin
-                // fwft_data [7:0] <= WR_DATA[7:0];
-                // fwft_data [16:9] <= WR_DATA[16:9];
-                // fwft_data [8] <= WR_DATA[8];
-                // fwft_data [17] <= WR_DATA[17];
-                fwft_data[17:0] <= WR_DATA;
-
+                fwft_data_temp[17:0] <= WR_DATA;
               end
               if(b_wptr_next==2 || b_wptr_next==4098 ) begin
-                // fwft_data [25:18] <= WR_DATA[7:0];
-                // fwft_data [34:27] <= WR_DATA[16:9];
-                // fwft_data [26] <= WR_DATA[8];
-                // fwft_data [35] <= WR_DATA[17];
-                fwft_data[35:18] <= WR_DATA;
-              end       
+                fwft_data_temp[35:18] <= WR_DATA;
+              end  
+            end        
         end
-
-
   end
 
 
@@ -1134,7 +1154,7 @@ assign p_empty = (diff_ptr1_for_a ==PROG_EMPTY_THRESH-1 || diff_ptr1_for_a <=PRO
        OVERFLOW <= 0;
       end
       else if (FULL & WR_EN ) begin
-       OVERFLOW <= 1;
+       OVERFLOW = 1;
       end
     end
 
@@ -1143,7 +1163,7 @@ assign p_empty = (diff_ptr1_for_a ==PROG_EMPTY_THRESH-1 || diff_ptr1_for_a <=PRO
           OVERFLOW <= 0;
         end
         else if(RD_EN & OVERFLOW) begin
-          OVERFLOW <= 0;
+          OVERFLOW = 0;
         end
     end
 
@@ -1153,7 +1173,7 @@ assign p_empty = (diff_ptr1_for_a ==PROG_EMPTY_THRESH-1 || diff_ptr1_for_a <=PRO
         UNDERFLOW <= 0;
       end
       else if (EMPTY & RD_EN) begin
-         UNDERFLOW <= 1;
+         UNDERFLOW = 1;
       end
     end
 
@@ -1185,8 +1205,7 @@ end
 
 end
 
-endgenerate
- initial begin
+endgenerate initial begin
     case(DATA_WRITE_WIDTH)
       9 ,
       18 ,
