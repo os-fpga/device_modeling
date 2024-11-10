@@ -1094,7 +1094,7 @@ module FIFO36K_tb();
   reg WR_EN; // Write enable
   reg RD_EN; // Read enable
 
-  parameter DATA_WIDTH_WRITE = 9; // FIFO data width (1-36)
+  parameter DATA_WIDTH_WRITE = 36; // FIFO data width (1-36)
   parameter DATA_WIDTH_READ = 36;   // FIFO data width (1-36)
 
   reg [DATA_WIDTH_WRITE-1:0] WR_DATA; // Write data
@@ -1148,7 +1148,7 @@ module FIFO36K_tb();
   //clock//
   initial begin
     WR_CLK = 1'b0;
-    forever #1000 WR_CLK = ~WR_CLK;
+    forever #1 WR_CLK = ~WR_CLK;
 end
 
 // initial begin
@@ -1158,7 +1158,7 @@ end
 
   initial begin
       RD_CLK = 1'b0;
-      forever #1000 RD_CLK = ~RD_CLK;
+      forever #1 RD_CLK = ~RD_CLK;
   end
 
    FIFO36K #(
@@ -1195,9 +1195,16 @@ end
     $display("--------------------------------------------");
     if(DATA_WIDTH_READ==DATA_WIDTH_WRITE) begin
       check_flags();
+      check_flags();
+      check_flags();
+      check_flags();
     end
     else begin
       check_flags1();
+      check_flags1();
+      check_flags1();
+      check_flags1();
+
     end
 
     test_status(error);
@@ -1239,7 +1246,7 @@ localparam RgtW_Ratio = (DATA_WIDTH_WRITE>=DATA_WIDTH_READ)?  1: DATA_WIDTH_READ
 
 
 
-  task check_flags();
+task check_flags();
     // resetting ptrs
     $display("--------------------------------------------");
     $display("CHECK FLAGS: RESET PTRS---------------------");
@@ -1264,207 +1271,138 @@ localparam RgtW_Ratio = (DATA_WIDTH_WRITE>=DATA_WIDTH_READ)?  1: DATA_WIDTH_READ
     end
 
     $display("CHECK FLAGS: Checking Flags on Each PUSH/POP Operation---------------------");
-    for(i = 1 ; i<=DEPTH; i=i+1) begin
-      push();
-      // wren_cnt+=1;
-      if(i==(DEPTH-1)) begin
-        if(~ALMOST_FULL)
-          begin $display("Assertion ALMOST_FULL failed!"); error=error+1; end
-
-      repeat(1) @(posedge WR_CLK);
-      repeat(1) @(negedge WR_CLK);
-    //  if (PROG_EMPTY)
-    //     begin $display("Assertion PROG_EMPTY_pop_fifo_flags failed!"); error=error+1; end
-      if (EMPTY)
-        begin $display("Assertion EMPTY_pop_fifo_flags failed!"); error=error+1; end
-      if (ALMOST_EMPTY)
-        begin $display("Assertion ALMOST_EMPTY_pop_fifo_flags failed!"); error=error+1; end
+    count_enteries_push=0;
+    for(i = 1 ; i<=DEPTH_WRITE+do_overflow; i=i+1) begin
+    
+    if(i==1) begin
+      push111();
+      @(posedge WR_CLK);
+      @(negedge WR_CLK);
+      // $display("time %t", $time);
+      if ({EMPTY,ALMOST_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,OVERFLOW} !== 6'b010_000) begin      
+                  begin  $display("ERROR PUSH: ONLY ALMOST EMPTY SHOULD BE ASSERTED"); error=error+1; end
       end
-      else begin
-        if (ALMOST_FULL)
-          begin $display("Assertion notfmo_fifo_flags failed!"); error=error+1; end
+    end
+    if(i>1 & i<DEPTH_WRITE-1) begin
+      push111();
+      @(posedge WR_CLK);
+      @(negedge WR_CLK);
+      // $display("time %t", $time);
+      if ({EMPTY,ALMOST_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,OVERFLOW} !== 6'b000_000) begin      
+                  begin  $display("ERROR PUSH: ALL SHOULD BE DE-ASSERTED"); error=error+1; end
       end
-
-      if(i>(DEPTH-PROG_FULL_THRESH)) begin
-        if (~PROG_FULL)
-          begin $display("Assertion fwm_fifo_flags failed!"); error=error+1; end
-
-        repeat(2) @(posedge WR_CLK);
-        repeat(1) @(negedge WR_CLK);
-        // if (PROG_EMPTY)
-        //   begin $display("Assertion PROG_EMPTY_pop_fifo_flags failed!"); error=error+1; end
-        if (EMPTY)
-          begin $display("Assertion not_empty_pop_fifo_flags failed!"); error=error+1; end
-        if (ALMOST_EMPTY)
-          begin $display("Assertion not_epo_pop_fifo_flags failed!"); error=error+1; end
-        end
-      else begin
-        if (PROG_FULL)
-          begin $display("Assertion notfwm_fifo_flags failed!"); error=error+1; end
     end
 
-      if(i==DEPTH) begin
-        if (~FULL)
-          begin $display("Assertion full_fifo_flags failed!"); error=error+1; end
-
-        repeat(1) @(posedge WR_CLK);
-        repeat(1) @(negedge WR_CLK);
-        // if (PROG_EMPTY)
-        //   begin $display("Assertion ewm_pop_fifo_flags failed!"); error=error+1; end
-        if (EMPTY)
-          begin $display("Assertion not_empty_pop_fifo_flags failed!"); error=error+1; end
-        if (ALMOST_EMPTY)
-          begin $display("Assertion not_epo_pop_fifo_flags failed!"); error=error+1; end
-        end
-      else begin
-        if (FULL)
-          begin $display("Assertion notfull_fifo_flags failed!"); error=error+1; end
+    if(i==DEPTH_WRITE-1) begin
+      push111();
+      @(posedge WR_CLK);
+      @(negedge WR_CLK);
+      // $display("time %t", $time);
+      if ({EMPTY,ALMOST_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,OVERFLOW} !== 6'b000_010) begin      
+                  begin  $display("ERROR PUSH: ONLY ALMOST FULL SHOULD BE ASSERTED"); error=error+1; end
       end
-
-      if (OVERFLOW)
-        begin $display("Assertion no_overrun_fifo_flag failed!"); error=error+1; end
-      repeat(1) @(posedge WR_CLK);
-      repeat(1) @(negedge WR_CLK);
-      if (UNDERFLOW)
-        begin $display("Assertion no_underrun_fifo_flag failed!"); error=error+1; end
     end
-    for(i = DEPTH ; i>=1; i=i-1) begin
-      pop();
-     
-      if(PROG_EMPTY_THRESH>=i) begin
-        if (~PROG_EMPTY)
-          begin $display("Assertion PROG_EMPTY_pop_fifo_flags failed!"); error=error+1; end
-        repeat(1) @(posedge WR_CLK);
-        repeat(1) @(negedge WR_CLK);
-        if (ALMOST_FULL)
-          begin $display("Assertion ALMOST_FULL_fifo_flags failed!"); error=error+1; end
-        // if (PROG_FULL)
-        //   begin $display("Assertion PROG_FULL_fifo_flags failed!"); error=error+1; end
-        if (FULL)
-          begin $display("Assertion FULL_fifo_flags failed!"); error=error+1; end
-        end
-      else begin
-        if (PROG_EMPTY)
-          begin $display("Assertion PROG_EMPTY_pop_fifo_flags failed!"); error=error+1; end
-        end
 
-      if(i==1) begin
-        if (~EMPTY)
-          begin $display("Assertion EMPTY_pop_fifo_flags failed!"); error=error+1; end
-        repeat(1) @(posedge WR_CLK);
-        repeat(1) @(negedge WR_CLK);
-        if (ALMOST_FULL)
-          begin $display("Assertion ALMOST_FULL_fifo_flags failed!"); error=error+1; end
-        // if (PROG_FULL)
-        //   begin $display("Assertion PROG_FULL_fifo_flags failed!"); error=error+1; end
-        if (FULL)
-          begin $display("Assertion FULL_fifo_flags failed!"); error=error+1; end
-        end
-      else begin
-        if (EMPTY)
-          begin $display("Assertion EMPTY_pop_fifo_flags failed!"); error=error+1; end
-        end
-
-      if(i==2) begin
-        if (~ALMOST_EMPTY)
-          begin $display("Assertion ALMOST_EMPTY_pop_fifo_flags failed!"); error=error+1; end
-        repeat(2) @(posedge WR_CLK);
-        repeat(1) @(negedge WR_CLK);
-        if (ALMOST_FULL)
-          begin $display("Assertion ALMOST_FULL_fifo_flags failed!"); error=error+1; end
-        // if (PROG_FULL)
-        //   begin $display("Assertion PROG_FULL_fifo_flags failed!"); error=error+1; end
-        if (FULL)
-          begin $display("Assertion FULL_fifo_flags failed!"); error=error+1; end
-        end
-      else begin
-        if (ALMOST_EMPTY)
-          begin $display("Assertion ALMOST_EMPTY_pop_fifo_flags failed!"); error=error+1; end
-        end
-
-      if (UNDERFLOW)
-        begin $display("Assertion UNDERFLOW_pop_fifo_flag failed!"); error=error+1; end
-      repeat(1) @(posedge WR_CLK);
-      repeat(1) @(negedge WR_CLK);
-      if (OVERFLOW)
-        begin $display("Assertion OVERFLOW_pop_fifo_flag failed!"); error=error+1; end
-    // rden_cnt+=1;
+    if(i==DEPTH_WRITE) begin
+      push111();
+      @(posedge WR_CLK);
+      @(negedge WR_CLK);
+      // $display("time %t", $time);
+      if ({EMPTY,ALMOST_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,OVERFLOW} !== 6'b000_100) begin      
+                  begin  $display("ERROR PUSH: ONLY FULL SHOULD BE ASSERTED"); error=error+1; end
+      end
     end
-    $display("CHECK FLAGS: Read from EMPTY FIFO and Check UNDERFLOW Status---------------------");
-    repeat (1) begin
-    pop();
-    // rden_cnt+=1;
+
+      if(i==DEPTH_WRITE & do_overflow) begin
+      push111(); 
+      @(posedge WR_CLK);
+      if (OVERFLOW !== 1'b1) begin      
+                  begin  $display("ERROR PUSH: OVERFLOW SHOULD BE 1"); error=error+1; end
+      end            
     end
-    if (~UNDERFLOW)
-      begin $display("Assertion UNDERFLOW_fifo_flag failed!"); error=error+1; end
-
-    $display("CHECK FLAGS: RESET PTRS after UNDERFLOW---------------------");
-    RESET = 1;
-    repeat(2) @(negedge WR_CLK);
-    RESET = 0;
-    @(posedge WR_CLK);
-    @(negedge WR_CLK);
-
-    $display("CHECK FLAGS: Push Data Into FIFO Until FULL---------------------");
-    repeat(DEPTH) push();
-
-    $display("CHECK FLAGS: Write into a FULL FIFO and Check OVERFLOW Status---------------------");
-    repeat (1)push();
-    if (~OVERFLOW)
-      begin $display("Assertion OVERFLOW_fifo_flag failed!"); error=error+1; end
-
-
-    repeat(20) @(negedge WR_CLK);
-
-    $display("CHECK FLAGS: RESET PTRS after OVERFLOW---------------------");
-    RESET = 1;
-    repeat(2) @(negedge WR_CLK);
-    RESET = 0;
-    @(posedge WR_CLK);
-    @(negedge WR_CLK);
-    $display("CHECK FLAGS: EXIT---------------------------");
-
-  endtask
-
-  task pop();
-    @(negedge WR_CLK);
-    RD_EN = 1;
-    @(posedge WR_CLK);
-
-    if (UNDERFLOW)
-      $display("FIFO is UNDERFLOW, POPing is UNDERFLOW");
-    else if(EMPTY) begin
-      $display("FIFO is EMPTY, POPing is UNDERFLOW");
-      local_queue.delete();
-    end
-    else begin
-      exp_dout = local_queue.pop_front();
-    end
-    @(negedge WR_CLK);
-    RD_EN =0;
-    if(debug) $display(" RD_DATA:   %0h",RD_DATA, "   Time: %t",$time);
-
-  endtask
   
-  //task push(reg [32-1:0] in_din=$urandom_range(0, 2**32-1)); 
-  task push(reg [DATA_WIDTH-1:0] in_din=$urandom_range(0, 2**DATA_WIDTH-1)); 
+  if(i<=PROG_EMPTY_THRESH) begin
+          if (PROG_EMPTY !== 1) begin      
+                  begin  $display("ERROR PUSH: PROG EMPTY SHOULD BE ASSERTED"); error=error+1; end
+      end
+  end
+
+ if(i>DEPTH_WRITE-PROG_FULL_THRESH) begin
+          if (PROG_FULL !== 1) begin      
+                  begin  $display("ERROR PUSH: PROG FULL SHOULD BE ASSERTED"); error=error+1; end
+      end
+  end
+
+ end
+
+count_enteries_pop=0;
+for(integer i = 1 ; i<=DEPTH_READ+do_underflow; i=i+1) begin
+
+
+if(i==1) begin
+    compare_pop_data111();
+    count_enteries_pop= count_enteries_pop+1;
+    pop111();
+    compare_pop_data111();
+    count_enteries_pop= count_enteries_pop+1;
+    @(posedge WR_CLK);
     @(negedge WR_CLK);
-    WR_EN = 1; 
-    WR_DATA = in_din;
-    // if(debug) $display(" WR_EN = ",WR_EN, " WR_DATA = ",WR_DATA);
-    if (OVERFLOW) begin
-      $display("FIFO is OVERFLOW, PUSHing is OVERFLOW");
+    if ({EMPTY,ALMOST_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,OVERFLOW} !== 6'b000_010) begin      
+                  begin  $display("ERROR PUSH: ONLY ALMOST FULL SHOULD BE ASSERTED"); error=error+1; end
     end
-    else if(FULL) begin
-      $display("FIFO is FULL, PUSHing is OVERFLOW");
-      local_queue.delete();
-    end
-    else begin
-      local_queue.push_back(WR_DATA);
-    end
+end
+
+if(i>1 & i<DEPTH_READ-1) begin
+    pop111();
+    compare_pop_data111();
+    count_enteries_pop= count_enteries_pop+1;
+    @(posedge WR_CLK);
     @(negedge WR_CLK);
-    WR_EN = 0;
-  endtask
+    if ({EMPTY,ALMOST_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,OVERFLOW} !== 6'b000_000) begin      
+                  begin  $display("ERROR PUSH: ONLY ALMOST FULL SHOULD BE ASSERTED"); error=error+1; end
+    end
+end
+
+if(i==DEPTH_READ-1) begin
+    pop111();
+    compare_pop_data111();
+    count_enteries_pop= count_enteries_pop+1;
+    @(posedge WR_CLK);
+    if ({EMPTY,ALMOST_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,OVERFLOW} !== 6'b010_000) begin      
+                  begin  $display("ERROR PUSH: ONLY ALMOST FULL SHOULD BE ASSERTED"); error=error+1; end
+    end
+end
+
+if(i==DEPTH_READ) begin
+    pop111();
+    compare_pop_data111();
+    count_enteries_pop= count_enteries_pop+1;
+    @(posedge WR_CLK);
+    if ({EMPTY,ALMOST_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,OVERFLOW} !== 6'b100_000) begin      
+                  begin  $display("ERROR PUSH: ONLY ALMOST FULL SHOULD BE ASSERTED"); error=error+1; end
+    end
+end
+
+if(i==DEPTH_READ+do_underflow & do_underflow==1) begin
+    pop111();
+    @(posedge WR_CLK);
+    if ({EMPTY,ALMOST_EMPTY,UNDERFLOW,   FULL,ALMOST_FULL,OVERFLOW} !== 6'b101_000) begin      
+                  begin  $display("ERROR PUSH: EMPTY AND UNDERFLOW SHOULD BE ASSERTED"); error=error+1; end
+    end
+end
+end
+
+if(i<PROG_FULL_THRESH) begin
+    if (PROG_FULL !== 1)
+    begin $display("ERROR: PROG FULL SHOULD BE ASSERTED"); error=error+1; end
+end
+
+if(i>DEPTH_READ-PROG_EMPTY_THRESH) begin
+    if (PROG_EMPTY !== 1)
+    begin $display("ERROR: PROG EMPTY SHOULD BE ASSERTED"); error=error+1; end
+end
+
+endtask
 
 
 task check_flags1();
@@ -1482,7 +1420,9 @@ task check_flags1();
     @(negedge WR_CLK);
 
   if(DATA_WIDTH_WRITE > DATA_WIDTH_READ) begin
-    
+  
+  count_enteries_push=0;
+  
   for(int i=0; i<DEPTH_WRITE+do_overflow; i++) begin
     
     if((i+1)*WgtR_Ratio<PROG_EMPTY_THRESH) begin
@@ -1547,6 +1487,8 @@ end
 
 if(DATA_WIDTH_WRITE > DATA_WIDTH_READ) begin
     
+    count_enteries_pop=0;
+
   for(int i=0; i<DEPTH_READ+do_underflow; i++) begin
 
     compare_pop_data111();
@@ -1594,7 +1536,9 @@ if(DATA_WIDTH_WRITE > DATA_WIDTH_READ) begin
 end
 
 if(DATA_WIDTH_WRITE < DATA_WIDTH_READ) begin
-    
+
+count_enteries_push=0;
+
   for(int i=0; i<DEPTH_WRITE+do_overflow; i++) begin
 
     if(i<RgtW_Ratio) begin
