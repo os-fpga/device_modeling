@@ -10,7 +10,7 @@
       specparam T1 = 0.5;
 
         specify
-          (A => Y) = (T1);
+          (A *> Y) = (T1);
         endspecify
     `endif // `ifdef TIMED_SIM  
   `endif //  `ifndef SYNTHESIS
