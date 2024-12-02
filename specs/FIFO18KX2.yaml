@@ -202,7 +202,7 @@ parameters:
       vector: 11
     PROG_FULL_THRESH1:
       desc: 11-bit Programmable full depth, FIFO 1
-      default: 11'h7fa
+      default: 11'hfa
       vector: 11
     DATA_WRITE_WIDTH2:
       desc: FIFO data write width, FIFO 2 (9, 18)
@@ -230,6 +230,6 @@ parameters:
       vector: 11
     PROG_FULL_THRESH2:
       desc: 11-bit Programmable full depth, FIFO 2
-      default: 11'h7fa
+      default: 11'hfa
       vector: 11
 

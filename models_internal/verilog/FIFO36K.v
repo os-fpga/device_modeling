@@ -12,7 +12,7 @@ module FIFO36K #(
   parameter DATA_READ_WIDTH = 36, // FIFO data read width (9, 18, 36)
   parameter FIFO_TYPE = "SYNCHRONOUS", // Synchronous or Asynchronous data transfer (SYNCHRONOUS/ASYNCHRONOUS)
   parameter [11:0] PROG_EMPTY_THRESH = 12'h004, // 12-bit Programmable empty depth
-  parameter [11:0] PROG_FULL_THRESH = 12'hffa // 12-bit Programmable full depth
+  parameter [11:0] PROG_FULL_THRESH = 12'hfa // 12-bit Programmable full depth
 ) (
   input RESET, // Active high synchronous FIFO reset
   input WR_CLK, // Write clock

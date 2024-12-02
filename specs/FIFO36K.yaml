@@ -141,5 +141,5 @@ parameters:
       vector: 12
     PROG_FULL_THRESH:
       desc: 12-bit Programmable full depth
-      default: 12'hffa
+      default: 12'hfa
       vector: 12
