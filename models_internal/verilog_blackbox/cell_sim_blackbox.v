@@ -99,23 +99,6 @@ module DFFRE (
 endmodule
 `endcelldefine
 //
-// DLY_SEL_DCODER black box model
-// Address Decoder
-//
-// Copyright (c) 2024 Rapid Silicon, Inc.  All rights reserved.
-//
-`celldefine
-(* blackbox *)
-module DLY_SEL_DCODER (
-  input logic DLY_LOAD,
-  input logic DLY_ADJ,
-  input logic DLY_INCDEC,
-  input logic [4:0] DLY_ADDR,
-  output reg [2:0] DLY_CNTRL[31:0]
-);
-endmodule
-`endcelldefine
-//
 // DLY_SEL_DECODER black box model
 // Address Decoder
 //
